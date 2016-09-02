@@ -8,31 +8,34 @@
 #'@param nlam Number of lambda values to consider
 #' @return A list with items z, Robs, and fdr.
 #'@export
-fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, fdr.max=0.5,
-                           signed=FALSE, seg.names=NULL){
+fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
+                            seg.names=NULL){
 
   stopifnot(length(perm.maxes.list)==length(nbp))
   stopifnot(length(perm.maxes.list)==length(max1.list))
+
+  s <- length(zmin)
+
   K <- length(max1.list)
 
   m1tab <- matrix(nrow=0, ncol=3)
   for(i in 1:K){
     m1 <- sort(max1.list[[i]], decreasing=TRUE)
     lamtab <- perm.maxes.list[[i]]
-    if(!signed){
+    if(s==1){
                     #threhsold           #lambda per base
       rts <- approx(x=lamtab[,1], y=log10(lamtab[,2]),
-                    xout=m1, yright = 0, yleft = max(log10(lamtab[,2])))$y
+                    xout=m1, yright = -Inf, yleft = max(log10(lamtab[,2])))$y
     }else{
       ixpos_m1 <- which(m1 > 0)
       ixpos_pm <- which(lamtab[,1] > 0)
       rts <- rep(NA, length(m1))
       rts[ixpos_m1] <- approx(x=lamtab[ixpos_pm,1], y=log10(lamtab[ixpos_pm,2]),
-                    xout=m1[ixpos_m1], yright = 0, yleft = max(log10(lamtab[ixpos_pm,2])))$y
+                    xout=m1[ixpos_m1], yright = -Inf, yleft = max(log10(lamtab[ixpos_pm,2])))$y
       ixneg_m1 <- which(m1 < 0)
       ixneg_pm <- which(lamtab[,1] <0)
       rts[ixneg_m1]<- approx(x=lamtab[ixneg_pm,1], y=log10(lamtab[ixneg_pm,2]),
-                        xout=m1[ixneg_m1], yright = 0, yleft = max(log10(lamtab[ixneg_pm,2])))$y
+                        xout=m1[ixneg_m1], yright = -Inf, yleft = max(log10(lamtab[ixneg_pm,2])))$y
 
     }
     m1tab <- rbind(m1tab, cbind(m1, rts, rep(i, length(m1))))
@@ -43,66 +46,53 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, fdr.max=0.5,
   names(m1tab)[3] <- "seg"
   m1tab <- m1tab[order(m1tab$rts, decreasing=FALSE), ]
 
-  z <- Robs <- matrix(nrow=0, ncol=K+1)
-  fdr <- c()
-  if(!signed){
+
+  lambda <- 10^(m1tab$rts)*sum(nbp)*s
+  fdr <- lambda/(1:nrow(m1tab))
+  ix <- max(which(fdr <= fdr.max)) + 1
+  fdr <- fdr[1:ix]
+  z <- Robs <- matrix(nrow=ix, ncol=K+1)
+  z[,1] <- Robs[,1] <- lambda[1:ix]
+  if(s==1){
     zneg <- NULL
-    robs <- rep(0, K)
-    zz <- rep(Inf, K)
-    lam_seg <- rep(0, K)
-    lambda <- 0
-    i <- 1
-    while(max(fdr) <= fdr.max & i <= nrow(m1tab)){
-      seg <- m1tab$seg[i]
-      #lambda
-      #lam_seg[seg] <- 10^(m1tab$rts[i])*nbp[seg]
-      #lam_seg[lam_seg > 0] <- 10^(m1tab$rts[i])*nbp[lam_seg > 0]
-      lambda <- 10^(m1tab$rts[i])*sum(nbp)
-      #Number of discoveries
-      robs[seg] <- robs[seg] + 1
-      Robs <- rbind(Robs, c(lambda, robs))
-      #Thresholds
-      zz[seg] <- m1tab$m1[i]
-      z <- rbind(z, c(lambda, zz))
-      fdr <- c(fdr, lambda/sum(robs))
-      i <- i + 1
-    }
   }else{
     zneg <- z
-    robs <- rep(0, K)
-    zz <- rep(Inf, K)
-    zzneg <- rep(-Inf, K)
-    lam_seg <- matrix(0, nrow=2, ncol=K)
-    lambda <- 0
-    i <- 1
-    while(max(fdr) <= fdr.max & i <= nrow(m1tab)){
-      seg <- m1tab$seg[i]
-      sgn <- m1tab$sgn[i]
-      #lambda
-      #lam_seg[sgn, seg] <- 10^(m1tab$rts[i])*nbp[seg]
-      #lam_seg[1, colSums(lam_seg) > 0] <- 10^(m1tab$rts[i])*nbp[colSums(lam_seg) > 0]
-      #lam_seg[2, colSums(lam_seg) > 0] <- 10^(m1tab$rts[i])*nbp[colSums(lam_seg) > 0]
-      #lambda <- sum(lam_seg)
-      #lam_seg[sgn, seg] <- 10^(m1tab$rts[i])
-      lambda <- 2*10^(m1tab$rts[i])*sum(nbp)
-      #Number of discoveries
-      robs[seg] <- robs[seg] + 1
-      Robs <- rbind(Robs, c(lambda, robs))
-
-      #Thresholds
-      if(sgn ==1 ){
-        zz[seg] <- m1tab$m1[i]
-        z <- rbind(z, c(lambda, zz))
-        zneg <- rbind(zneg, c(lambda, zzneg))
-      }else{
-        zzneg[seg] <- m1tab$m1[i]
-        z <- rbind(z, c(lambda, zz))
-        zneg <- rbind(zneg, c(lambda, zzneg))
-      }
-      fdr <- c(fdr, lambda/sum(robs))
-      i <- i+1
+  }
+  robs <- rep(0, K)
+  for(i in 1:ix){
+    seg <- m1tab$seg[i]
+    robs[seg] <- robs[seg] + 1
+    Robs[i,-1] <-robs
+    #Thresholds
+    if(s==2){
+      zz <- get_thresh_sgn(perm.maxes.list, m1tab$rts[i], zmin)
+      z[i,-1] <- zz$zpos
+      zneg[i, -1] <- zz$zneg
+    }else{
+      zz <- get_thresh_usgn(perm.maxes.list, m1tab$rts[i], zmin)
+      z[i, -1] <- zz
     }
   }
   ret <- list("Robs"=Robs, "z"=z, "zneg" = zneg, "fdr"=fdr, "nbp"=nbp, "m1tab"=m1tab)
   return(ret)
 }
+
+get_thresh_usgn <- function(perm.maxes.list, log_lambda_bp, zmin, eps=1e-6){
+  z <- sapply(perm.maxes.list, FUN=function(m){
+    approx(x=log10(m[,2]), y=m[,1], xout=log_lambda_bp, yleft=Inf, yright=zmin)$y
+  })
+  return(z-eps)
+}
+
+get_thresh_sgn <- function(perm.maxes.list, log_lambda_bp, zmin, eps=1e-6){
+  zpos <- sapply(perm.maxes.list, FUN=function(m){
+    ix <- which(m[,1] > 0)
+    approx(x=log10(m[ix,2]), y=m[ix,1], xout=log_lambda_bp, yleft=Inf, yright=zmin[1])$y
+  })
+  zneg <- sapply(perm.maxes.list, FUN=function(m){
+    ix <- which(m[,1] < 0)
+    approx(x=log10(m[ix,2]), y=m[ix,1], xout=log_lambda_bp, yleft=-Inf, yright=zmin[2])$y
+  })
+  return(list("zpos"=zpos-eps, "zneg"=zneg-eps))
+}
+
