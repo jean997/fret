@@ -55,9 +55,9 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, fdr.max=0.5,
     while(max(fdr) <= fdr.max & i <= nrow(m1tab)){
       seg <- m1tab$seg[i]
       #lambda
-      lam_seg[seg] <- 10^(m1tab$rts[i])*nbp[seg]
-      lam_seg[lam_seg > 0] <- 10^(m1tab$rts[i])*nbp[lam_seg > 0]
-      lambda <- sum(lam_seg)
+      #lam_seg[seg] <- 10^(m1tab$rts[i])*nbp[seg]
+      #lam_seg[lam_seg > 0] <- 10^(m1tab$rts[i])*nbp[lam_seg > 0]
+      lambda <- 10^(m1tab$rts[i])*sum(nbp)
       #Number of discoveries
       robs[seg] <- robs[seg] + 1
       Robs <- rbind(Robs, c(lambda, robs))
@@ -79,11 +79,12 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, fdr.max=0.5,
       seg <- m1tab$seg[i]
       sgn <- m1tab$sgn[i]
       #lambda
-      lam_seg[sgn, seg] <- 10^(m1tab$rts[i])*nbp[seg]
-      lam_seg[1, colSums(lam_seg) > 0] <- 10^(m1tab$rts[i])*nbp[colSums(lam_seg) > 0]
-      lam_seg[2, colSums(lam_seg) > 0] <- 10^(m1tab$rts[i])*nbp[colSums(lam_seg) > 0]
-      lambda <- sum(lam_seg)
-
+      #lam_seg[sgn, seg] <- 10^(m1tab$rts[i])*nbp[seg]
+      #lam_seg[1, colSums(lam_seg) > 0] <- 10^(m1tab$rts[i])*nbp[colSums(lam_seg) > 0]
+      #lam_seg[2, colSums(lam_seg) > 0] <- 10^(m1tab$rts[i])*nbp[colSums(lam_seg) > 0]
+      #lambda <- sum(lam_seg)
+      #lam_seg[sgn, seg] <- 10^(m1tab$rts[i])
+      lambda <- 2*10^(m1tab$rts[i])*sum(nbp)
       #Number of discoveries
       robs[seg] <- robs[seg] + 1
       Robs <- rbind(Robs, c(lambda, robs))
