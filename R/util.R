@@ -16,7 +16,7 @@ getobj <- function (Rdata){
   return(get(objname))
 }
 
-
+#'@export
 mxlist <- function(ys, z0, zmin){
   stopifnot(length(z0)==length(zmin))
   stopifnot(length(z0) %in% c(1, 2))
@@ -44,10 +44,23 @@ mxlist <- function(ys, z0, zmin){
     #Max stat value inside each excurion
     mxs <- apply(ivls, MARGIN=1, FUN=function(iv){
       yy <- ys[iv[1]:iv[2]]
-      return(max(abs(yy))*sgn(yy[1]))
+      return(max(abs(yy))*sign(yy[1]))
     })
     mxs <- mxs[mxs >= zmin[1] | mxs <= zmin[2]]
     return(mxs)
   }
 }
 
+#'@export
+lamtab <- function(mx, zmin, nbp, n.perm){
+  stopifnot(length(zmin) %in% c(1, 2))
+  mx <- sort(mx, decreasing=TRUE)
+  if(length(zmin)==1){
+    stopifnot(all(mx > 0))
+    return(cbind(mx, (0:(length(mx)-1))/(n.perm*nbp)))
+  }else{
+    npos <- sum(mx > 0)
+    nneg <- sum(mx < 0)
+    return(cbind(mx,  c(0:(npos-1), (nneg-1):0)/(n.perm*nbp)))
+  }
+}

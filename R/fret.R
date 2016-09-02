@@ -115,12 +115,8 @@ maxes_1seg <- function(dat.file, pheno.file, s0, zmin,
 
   mx <- cbind(m, (1:length(m))/(n.perm*len))
 
-  if(all(m < zmin)){
+  if( length(m)==0){
     mx <- cbind(zmin, 0)
-  }else if(sum(m >=zmin) < 5){
-    mx <- mx[1:5, ]
-  }else{
-    mx <- mx[m >= zmin,]
   }
 
   if(is.null(out.file)){
