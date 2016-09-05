@@ -4,8 +4,8 @@
 \alias{fret_choose_z2}
 \title{Find thresholds for a range of lambda values. Calculate FDR.}
 \usage{
-fret_choose_z2(max1.list, perm.maxes.list, nbp, fdr.max = 0.5,
-  signed = FALSE, seg.names = NULL)
+fret_choose_z2(max1.list, perm.maxes.list, nbp, zmin, fdr.max = 0.8,
+  seg.names = NULL, target.fdr = NULL)
 }
 \arguments{
 \item{max1.list}{List of peak heights for each segment.}
@@ -15,7 +15,13 @@ second column is lambda per bp (num of peaks less than threshold divided by numb
 
 \item{nbp}{Number of base-pairs per segment}
 
-\item{nlam}{Number of lambda values to consider}
+\item{zmin}{}
+
+\item{fdr.max}{}
+
+\item{seg.names}{}
+
+\item{target.fdr}{}
 }
 \value{
 A list with items z, Robs, and fdr.
