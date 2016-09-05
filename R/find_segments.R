@@ -71,16 +71,19 @@ find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL){
       n <- n + 1
     }
   }
+  #strts is length n, stps is length n-1
   if(strts[n] > max(pos)){
     strts <- strts[-n]
     n <- n-1
   }
+  #Either stps and strts are both length n or
+  #strts is length n, stps is length n-1
   if(strts[n]+min.length-1 <= max(pos)){
-    stps <- c(stps, max(pos))
+    stps[n] <- max(pos)
   }else{
     strts <- strts[-n]
     n <- n-1
-    stps <- stps[1:n]
+    if(length(stps) > n) stps <- stps[1:n]
     stps[n] <- max(pos)
   }
   return(cbind(strts, stps))
