@@ -36,11 +36,11 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
       ixpos_pm <- which(lamtab[,1] > 0)
       rts <- rep(NA, length(m1))
       rts[ixpos_m1] <- approx(x=lamtab[ixpos_pm,1], y=lamtab[ixpos_pm,2],
-                    xout=m1[ixpos_m1], yright = -Inf, yleft = max(lamtab[ixpos_pm,2]))$y
+                    xout=m1[ixpos_m1], yright = 0, yleft = max(lamtab[ixpos_pm,2]))$y
       ixneg_m1 <- which(m1 < 0)
       ixneg_pm <- which(lamtab[,1] <0)
       rts[ixneg_m1]<- approx(x=lamtab[ixneg_pm,1], y=lamtab[ixneg_pm,2],
-                        xout=m1[ixneg_m1], yright = -Inf, yleft = max(lamtab[ixneg_pm,2]))$y
+                        xout=m1[ixneg_m1], yleft = 0, yright = max(lamtab[ixneg_pm,2]))$y
 
     }
     m1tab <- rbind(m1tab, cbind(m1, rts, rep(i, length(m1))))
