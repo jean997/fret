@@ -13,9 +13,12 @@
 #' the 25th percentile.
 #' @return 2 by K matrix listing interval endpoints.
 #'@export
-find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL){
+find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL, bandwidth=NULL){
   stopifnot(length(vv)==length(pos))
-  vvs <- ksmooth(x=pos, y=vv, bandwidth=min.length/2, x.points=pos)$y
+  if(is.null(bandwidth)) bandwidth <- min.length/2
+  stopifnot(bandwidth > 0)
+  
+  vvs <- ksmooth(x=pos, y=vv, bandwidth=bandwidth, x.points=pos)$y
   if(is.null(z0) & is.null(z)){
     z0 <- quantile(vvs, 0.25)
     z <- quantile(vvs, 0.75)
