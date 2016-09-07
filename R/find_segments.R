@@ -33,10 +33,7 @@ find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL,
     stps[length(stps)] <- max(pos)
     return(cbind(strts, stps))
   }
-  q0 <-rle( vvs > z0 )
-  p0 <- length(q0$lengths)
-  #Excursions at z0
-  ivls <- cbind(c(1, cumsum(q0$lengths)[-p0]+1)[q0$values], (cumsum(q0$lengths))[q0$values])
+  ivls <- excursions(vvs, z0)
   #Max stat value inside each excurion
   bpoints <- apply(ivls, MARGIN=1, FUN=function(iv){
     m <- max(vvs[iv[1]:iv[2]])
@@ -56,23 +53,47 @@ find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL,
       #Low variance region long enough to make up entire segment by itself
       stps <- c(stps, bp[ix, 1]-1)
       strts <- c(strts, bp[ix, 1])
-      n <- n + 1
+      n <- n+1
     }else if(bp[ix, 2]-strts[n] + 1 >= min.length){
       stps <- c(stps, bp[ix, 2])
-      strts <- c(strts, bp[ix,2]+1)
-      n <- n + 1
+      strts <- c(strts, bp[ix, 2] + 1)
+      n <- n+1
       ix <- ix + 1
     }else{
-      new.end <- strts[n] + min.length -1
-      if(any(bp[,1] < new.end & bp[,2] > new.end)){
-        ix <- which(bp[,1] < new.end & bp[,2] > new.end)
-        new.end <- bp[ix, 2]
+      n.needed <- min.length - (bp[ix, 2]-strts[n] + 1 )
+      dist.prev <- min( stps[n-1]-strts[n-1] + 1 - min.length, stps[n-1] - bp[ix-1, 2])
+      dist.end <- max(pos)-bp[ix,2]
+
+      if(dist.prev + dist.end < n.needed){
+        n <- n-1
+        stps[n] <- max(pos)
+      }else if(dist.prev >=floor(n.needed/2) & dist.end >= ceiling(n.needed/2)){
+        nleft <- floor(n.needed/2)
+        nright <- n.needed -nleft
+        strts[n] <- strts[n]-nleft
+        stps[n-1] <- strts[n]-1
+        stps[n] <- bp[ix,2] + nright
+      }else if(dist.prev >= floor(n.needed/2)){
+        nright <- dist.end
+        nleft <- n.needed-nright
+        strts[n] <- strts[n]-nleft
+        stps[n-1] <- strts[n]-1
+        stps <- c(stps, bp[ix,2] + nright)
+      }else{
+        nleft <- dist.prev
+        nright <- n.needed -dist.prev
+        strts[n] <- strts[n]-nleft
+        stps[n-1] <- strts[n]-1
+        stps <- c(stps, bp[ix,2] + nright)
       }
-      stps <- c(stps, new.end)
-      strts <- c(strts, new.end + 1)
-      if(any(bp[,1] > new.end)) ix <- min(which(bp[,1] > new.end))
+      if(any(bp[,1] <= stps[n] & bp[,2] >= stps[n])){
+        ix <- which(bp[,1] <= stps[n] & bp[,2] >= stps[n])
+        stps[n] <- bp[ix, 2]
+      }
+      if(any(bp[,1] >= stps[n])) ix <- min(which(bp[,1] >= stps[n]))
         else ix <- nrow(bp) + 1
       n <- n + 1
+      strts[n] <- stps[n-1] + 1
     }
   }
   #strts is length n, stps is length n-1

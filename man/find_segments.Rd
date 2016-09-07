@@ -4,7 +4,8 @@
 \alias{find_segments}
 \title{Use variance of smoothed  permutation test statistics to define interval endpoints}
 \usage{
-find_segments(vv, pos, min.length, z0 = NULL, z = NULL)
+find_segments(vv, pos, min.length, z0 = NULL, z = NULL, bandwidth = NULL,
+  q = 0.05)
 }
 \arguments{
 \item{vv}{Variance of smoothed permutation test statistics}
