@@ -11,8 +11,11 @@ huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=20){
   if(length(x) > 1) stop("Not currently implemented for multivariate traits.\n")
   B <- apply(Y, MARGIN=1, FUN=function(y){
     f <- rlm(y~labs, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit)
-    b1 <- summary(f)$coefficients[2, 1]
-    s <- summary(f)$coefficients[2, 2]
+    coef <- summary(f)$coefficients
+    if(nrow(coef)==1) return(c(NA, NA, 0))
+    b1 <- coef[2, 1]
+    s <- coef[2, 2]
+    if(is.na(b1/(s+s0))) return(c(b1, s, 0))
     return(c(b1, s, b1/(s+s0)))
   })
   return(B)
