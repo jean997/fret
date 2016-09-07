@@ -57,7 +57,7 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
     ret <- list("Robs"=NULL, "z"=NULL, "zneg" = NULL, "nbp"=nbp, "m1tab"=m1tab)
     return(ret)
   }
-  ix <- max(which(m1tab$fdr <= fdr.max)) + 1
+  ix <- min(nrow(m1tab),  max(which(m1tab$fdr <= fdr.max)) + 1)
   z <- Robs <- matrix(nrow=ix, ncol=K+2)
   z[,1] <- Robs[,1] <- m1tab$lambda[1:ix]
   z[,2] <- Robs[,2] <- m1tab$fdr[1:ix]
