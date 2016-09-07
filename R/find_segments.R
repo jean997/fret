@@ -61,7 +61,8 @@ find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL,
       ix <- ix + 1
     }else{
       n.needed <- min.length - (bp[ix, 2]-strts[n] + 1 )
-      dist.prev <- min( stps[n-1]-strts[n-1] + 1 - min.length, stps[n-1] - bp[ix-1, 2])
+      if(n==1) dist.prev=0
+        else dist.prev <- min( stps[n-1]-strts[n-1] + 1 - min.length, stps[n-1] - bp[ix-1, 2])
       dist.end <- max(pos)-bp[ix,2]
 
       if(dist.prev + dist.end < n.needed){
