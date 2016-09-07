@@ -17,6 +17,27 @@ getobj <- function (Rdata){
 }
 
 #'@export
+excursions <- function(ys, z0){
+  exc <- function(y, z){
+    q0 <-rle( abs(y) > z )
+    p0 <- length(q0$lengths)
+    ivls <- cbind(c(1, cumsum(q0$lengths)[-p0]+1)[q0$values], (cumsum(q0$lengths))[q0$values])
+    return(ivls)
+  }
+  if(length(z0)==1){
+    return(exc(ys, z0))
+  }else{
+    stopifnot(z0[1] > 0 & z0[2] < 0)
+    ys_pos <- ys; ys_pos[ys < 0] <- 0
+    ivls_pos <- exc(ys_pos, z0[1])
+    ys_neg <- abs(ys); ys_neg[ys > 0] <- 0
+    ivls_neg <- exc(ys_neg, -z0[2])
+    ivls <- rbind(ivls_pos, ivls_neg)
+    return(ivls)
+  }
+}
+
+#'@export
 mxlist <- function(ys, z0, zmin){
   stopifnot(length(z0)==length(zmin))
   stopifnot(length(z0) %in% c(1, 2))
@@ -24,23 +45,18 @@ mxlist <- function(ys, z0, zmin){
   if(length(z0)==1){
     stopifnot(z0 > 0 & zmin >= z0)
     if(all(abs(ys) < z0)) return(c())
-    q0 <-rle( abs(ys) > z0 )
-    p0 <- length(q0$lengths)
     #Excursions at z0
-    ivls <- cbind(c(1, cumsum(q0$lengths)[-p0]+1)[q0$values], (cumsum(q0$lengths))[q0$values])
+    ivls <- excursions(ys, z0)
     #Max stat value inside each excurion
     mxs <- apply(ivls, MARGIN=1, FUN=function(iv){ max(abs(ys)[iv[1]:iv[2]])})
     mxs <- mxs[mxs >= zmin]
     return(mxs)
   }else{
-    sgn <- z0_l <- sign(ys)
-    z0_l <- replace(z0_l, sgn==1, z0[1])
-    z0_l <- replace(z0_l, sgn==-1, z0[2])
-    if(all(abs(ys) < abs(z0_l))) return(c())
-    q0 <-rle( abs(ys) > abs(z0_l) )
-    p0 <- length(q0$lengths)
-    #Excursions at z0
-    ivls <- cbind(c(1, cumsum(q0$lengths)[-p0]+1)[q0$values], (cumsum(q0$lengths))[q0$values])
+    stopifnot(z0[1] > 0 & z0[2] < 0)
+    stopifnot(zmin[1] > 0 & zmin[2] < 0)
+
+    #Excursions at z0 - positive
+    ivls <- excursions(ys, z0)
     #Max stat value inside each excurion
     mxs <- apply(ivls, MARGIN=1, FUN=function(iv){
       yy <- ys[iv[1]:iv[2]]
