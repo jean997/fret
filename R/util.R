@@ -73,10 +73,10 @@ lamtab <- function(mx, zmin, nbp, n.perm){
   mx <- sort(mx, decreasing=TRUE)
   if(length(zmin)==1){
     stopifnot(all(mx > 0))
-    return(cbind(mx, (0:(length(mx)-1))/(n.perm*nbp)))
+    return(cbind(mx, (1:length(mx))/(n.perm*nbp)))
   }else{
     npos <- sum(mx > 0)
     nneg <- sum(mx < 0)
-    return(cbind(mx,  c(0:(npos-1), (nneg-1):0)/(n.perm*nbp)))
+    return(cbind(mx,  c(1:npos, nneg:1)/(n.perm*nbp)))
   }
 }
