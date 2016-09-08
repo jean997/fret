@@ -55,6 +55,7 @@ mxlist <- function(ys, z0, zmin){
     stopifnot(z0[1] > 0 & z0[2] < 0)
     stopifnot(zmin[1] > 0 & zmin[2] < 0)
 
+    if(all(ys < z0[1] & ys > z0[2])) return(c())
     #Excursions at z0 - positive
     ivls <- excursions(ys, z0)
     #Max stat value inside each excurion
