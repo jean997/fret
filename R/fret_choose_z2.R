@@ -135,7 +135,7 @@ get_rate_with_thresh <- function(lamtab, thresh, np=4){
   if(thresh > max(lamtab[,1])){
     ff <- lm(log10(lamtab[1:np, 2])~ lamtab[1:np, 1])
     return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
-  }else if(thresh < min(lamtab[,1])){
+  }else if(thresh < min(lamtab[,1]) & thresh < 0){
     n <- nrow(lamtab)
     ff <- lm(log10(lamtab[(n-np+1):n, 2])~ lamtab[(n-np+1):n, 1])
     return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
@@ -143,5 +143,6 @@ get_rate_with_thresh <- function(lamtab, thresh, np=4){
   sgn <- sign(thresh)
   ix <- which(sign(lamtab[,1])==sgn)
 
-  return(10^(approx(x=lamtab[ix,1], y=log10(lamtab[ix,2]), xout=thresh)$y))
+  return(10^(approx(x=abs(lamtab[ix,1]), y=log10(lamtab[ix,2]),
+              xout=abs(thresh),  rule=2:1)$y))
 }
