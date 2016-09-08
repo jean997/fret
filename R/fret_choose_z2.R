@@ -31,7 +31,6 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
     rts <- sapply(m1, FUN=function(thresh){
       get_rate_with_thresh(lamtab, thresh)
     })
-    cat(i, " ", class(rts), " ")
     m1tab <- rbind(m1tab, cbind(m1, rts, rep(i, length(m1))))
   }
   m1tab <- data.frame(m1tab, row.names=NULL)
@@ -62,12 +61,11 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
     robs[seg] <- robs[seg] + 1
     Robs[i,-c(1, 2)] <-robs
     #Thresholds
+    zz <- get_thresh_with_rate(perm.maxes.list, m1tab$rts[i], zmin)
     if(s==2){
-      zz <- get_thresh_sgn(perm.maxes.list, m1tab$rts[i], zmin)
       z[i,-c(1, 2)] <- zz$zpos
       zneg[i, -c(1, 2)] <- zz$zneg
     }else{
-      zz <- get_thresh_usgn(perm.maxes.list, m1tab$rts[i], zmin)
       z[i, -c(1, 2)] <- zz
     }
   }
