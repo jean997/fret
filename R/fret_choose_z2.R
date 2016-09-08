@@ -26,29 +26,19 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
   m1tab <- matrix(nrow=0, ncol=3)
   for(i in 1:K){
     m1 <- sort(max1.list[[i]], decreasing=TRUE)
+    if(length(m1)==0) next
     lamtab <- perm.maxes.list[[i]]
-    if(s==1){
-                    #threhsold           #lambda per base
-      rts <- approx(x=lamtab[,1], y=lamtab[,2],
-                    xout=m1, yright = -Inf, yleft = max(lamtab[,2]))$y
-    }else{
-      ixpos_m1 <- which(m1 > 0)
-      ixpos_pm <- which(lamtab[,1] > 0)
-      rts <- rep(NA, length(m1))
-      rts[ixpos_m1] <- approx(x=lamtab[ixpos_pm,1], y=lamtab[ixpos_pm,2],
-                    xout=m1[ixpos_m1], yright = 0, yleft = max(lamtab[ixpos_pm,2]))$y
-      ixneg_m1 <- which(m1 < 0)
-      ixneg_pm <- which(lamtab[,1] <0)
-      rts[ixneg_m1]<- approx(x=lamtab[ixneg_pm,1], y=lamtab[ixneg_pm,2],
-                        xout=m1[ixneg_m1], yleft = 0, yright = max(lamtab[ixneg_pm,2]))$y
-
-    }
+    rts <- sapply(m1, FUN=function(thresh){
+      get_rate_with_thresh(lamtab, thresh)
+    })
+    cat(i, " ", class(rts), " ")
     m1tab <- rbind(m1tab, cbind(m1, rts, rep(i, length(m1))))
   }
-  m1tab <- data.frame(m1tab)
+  m1tab <- data.frame(m1tab, row.names=NULL)
+  names(m1tab)[3] <- "seg"
   m1tab$sgn <- rep(1, nrow(m1tab))
   m1tab$sgn[m1tab$m1 < 0] <- 2
-  names(m1tab)[3] <- "seg"
+
   m1tab <- m1tab[order(m1tab$rts, decreasing=FALSE), ]
   m1tab$lambda <- m1tab$rts*sum(nbp)*s
   m1tab$fdr <- m1tab$lambda/(1:nrow(m1tab))
@@ -90,12 +80,11 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
       lambda.pb <- lam.target/(sum(nbp)*s)
       if(lambda.pb > m1tab$rts[ix.upper]) stop("Something is wrong!\n")
       Robs <- rbind(Robs, Robs[ix.lower,])
+      zz <- get_thresh_with_rate(perm.maxes.list, lambda.pb, zmin)
       if(s==2){
-        zz <- get_thresh_sgn(perm.maxes.list, lambda.pb, zmin)
         z <- rbind(z, c(lam.target, ff, zz$zpos))
         zneg <- rbind(zneg, c(lam.target, ff, zz$zneg))
       }else{
-        zz <- get_thresh_usgn(perm.maxes.list, lambda.pb, zmin)
         z <- rbind(z, c(lam.target, ff, zz))
       }
     }
@@ -111,22 +100,50 @@ fret_choose_z2 <- function(max1.list, perm.maxes.list, nbp, zmin, fdr.max=0.8,
   return(ret)
 }
 
-get_thresh_usgn <- function(perm.maxes.list, lambda.pb, zmin, eps=1e-6){
-  z <- sapply(perm.maxes.list, FUN=function(m){
-    approx(x=m[,2], y=m[,1], xout=lambda.pb, yleft=Inf, yright=zmin)$y
-  })
-  return(z-eps)
-}
 
-get_thresh_sgn <- function(perm.maxes.list, lambda.pb, zmin, eps=1e-6){
+get_thresh_with_rate <- function(perm.maxes.list, lambda.pb, zmin, eps=1e-6, np=4){
+  if(length(zmin)==1){
+    z <- sapply(perm.maxes.list, FUN=function(m){
+      get_thresh_with_rate1(m, lambda.pb)
+    })
+    z <- pmax(z-eps, zmin)
+    return(z-eps)
+  }
   zpos <- sapply(perm.maxes.list, FUN=function(m){
     ix <- which(m[,1] > 0)
-    approx(x=m[ix,2], y=m[ix,1], xout=lambda.pb, yleft=Inf, yright=zmin[1])$y
+    get_thresh_with_rate1(m[ix,], lambda.pb)
   })
+  zpos <- pmax(zpos-eps, zmin[1])
   zneg <- sapply(perm.maxes.list, FUN=function(m){
     ix <- which(m[,1] < 0)
-    approx(x=m[ix,2], y=m[ix,1], xout=lambda.pb, yleft=-Inf, yright=zmin[2])$y
+    get_thresh_with_rate1(m[ix,], lambda.pb)
   })
-  return(list("zpos"=zpos-eps, "zneg"=zneg-eps))
+  zneg <- pmin(zneg+eps, zmin[2])
+  return(list("zpos"=zpos, "zneg"=zneg))
 }
 
+get_thresh_with_rate1 <- function(lamtab, rate, np=4){
+  if(rate < min(lamtab[,2])){
+    ff <- lm(lamtab[1:np, 1]~log10(lamtab[1:np, 2]))
+    return(ff$coefficients[2]*log10(rate) + ff$coefficients[1])
+  }
+  return(approx(y=lamtab[,1], x=log10(lamtab[,2]),
+                xout=log10(rate), yright=min(lamtab[,1]))$y)
+}
+
+
+get_rate_with_thresh <- function(lamtab, thresh, np=4){
+
+  if(thresh > max(lamtab[,1])){
+    ff <- lm(log10(lamtab[1:np, 2])~ lamtab[1:np, 1])
+    return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
+  }else if(thresh < min(lamtab[,1])){
+    n <- nrow(lamtab)
+    ff <- lm(log10(lamtab[(n-np+1):n, 2])~ lamtab[(n-np+1):n, 1])
+    return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
+  }
+  sgn <- sign(thresh)
+  ix <- which(sign(lamtab[,1])==sgn)
+
+  return(10^(approx(x=lamtab[ix,1], y=log10(lamtab[ix,2]), xout=thresh)$y))
+}
