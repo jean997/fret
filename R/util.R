@@ -38,7 +38,7 @@ excursions <- function(ys, z0){
 }
 
 #'@export
-mxlist <- function(ys, z0, zmin){
+mxlist <- function(ys, z0, zmin, return.ix = FALSE){
   stopifnot(length(z0)==length(zmin))
   stopifnot(length(z0) %in% c(1, 2))
 
@@ -49,7 +49,19 @@ mxlist <- function(ys, z0, zmin){
     ivls <- excursions(ys, z0)
     #Max stat value inside each excurion
     mxs <- apply(ivls, MARGIN=1, FUN=function(iv){ max(abs(ys)[iv[1]:iv[2]])})
-    mxs <- mxs[mxs >= zmin]
+    #o <- order(abs(mxs), decreasing=FALSE)
+    #mxs <- mxs[o]
+    #n <- length(mxs)
+    #if(sum(abs(mxs) >= zmin) > 5) ii <- which(abs(mxs) >= zmin)
+    #  else ii <- 1:(min(5, n))
+    #mxs <- mxs[ii]
+    if(return.ix){
+      ixs <- apply(ivls, MARGIN=1, FUN=function(iv){
+        (iv[1]:iv[2])[which.max(abs(ys)[iv[1]:iv[2]])]
+        })
+      #ixs <- ixs[o][ii]
+      return(data.frame("mx"=mxs, "ix"=ixs, "iv1"=ivls[,1], "iv2"=ivls[,2]))
+    }
     return(mxs)
   }else{
     stopifnot(z0[1] > 0 & z0[2] < 0)
@@ -63,7 +75,20 @@ mxlist <- function(ys, z0, zmin){
       yy <- ys[iv[1]:iv[2]]
       return(max(abs(yy))*sign(yy[1]))
     })
-    mxs <- mxs[mxs >= zmin[1] | mxs <= zmin[2]]
+    #o <- order(mxs, decreasing=TRUE)
+    #mxs <- mxs[o]
+    #np <- sum(mxs > 0)
+    #nn <- sum(mxs < 0)
+    #if(sum(mxs >=zmin[1]) > 5 & sum(mxs<=zmin[2]) > 5) ii <- which(mxs >=zmin[1]| mxs<=zmin[2])
+    #  else ii <- c(1:(min(5, np)), max((np+nn-4), np+1):(np+nn))
+    #mxs <- mxs[ii]
+    if(return.ix){
+      ixs <- apply(ivls, MARGIN=1, FUN=function(iv){
+        (iv[1]:iv[2])[which.max(abs(ys)[iv[1]:iv[2]])]
+      })
+      #ixs <- ixs[o][ii]
+      return(data.frame("mx"=mxs, "ix"=ixs, "iv1"=ivls[,1], "iv2"=ivls[,2]))
+    }
     return(mxs)
   }
 }
@@ -76,8 +101,11 @@ lamtab <- function(mx, zmin, nbp, n.perm){
     stopifnot(all(mx > 0))
     return(cbind(mx, (1:length(mx))/(n.perm*nbp)))
   }else{
+    ct <- c()
     npos <- sum(mx > 0)
+    if(npos > 0) ct <- 1:npos
     nneg <- sum(mx < 0)
-    return(cbind(mx,  c(1:npos, nneg:1)/(n.perm*nbp)))
+    if(nneg > 0) ct <- c(ct, nneg:1)
+    return(cbind(mx,  ct/(n.perm*nbp)))
   }
 }
