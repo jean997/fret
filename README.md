@@ -1,7 +1,6 @@
-cfdrSims
+fret
 ======
 
-Run cluster-wise FDR simulations
 
 To install:
 ```{r}
