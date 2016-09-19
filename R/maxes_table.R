@@ -86,24 +86,20 @@ maxes_table <- function(dat.file, pheno.file, s0, zmin, seed, n.perm,
   }
 
   cat("Calculating permutation statistics...\n")
-  if(save.perm.stats){
-    max.perm <- data.frame("mx"=c(), "ix"=c(), "iv1"=c(), "iv2"=c())
-    stats.perm <- array(dim=c(length(pos), 3, n.perm))
-    stats.perm.smooth <- array(dim=c(length(pos.out), n.perm))
-    for(i in 1:n.perm){
-      cat(i, " ")
-      stats.perm[ , , i] <- t(huber_stats(dat[,-1], x=perms[,i], s0=s0, maxit=maxit))
-      stats.perm.smooth[,i] <- ksmooth_0(x=pos, y=stats.perm[, 3, i], bandwidth = bandwidth)[ix1:ix2]
-      max.perm <- rbind(max.perm, mxlist(stats.perm.smooth[,i], z0, zmin, return.ix = TRUE))
-    }
-  }else{
-    max.perm <- apply(perms, MARGIN=2, FUN=function(l){
-      yy <- huber_stats(dat[,-1], x=l, s0=s0, maxit=maxit)
-      yys <- ksmooth_0(x=pos, y=yy[3,], bandwidth = bandwidth)[ix1:ix2]
-      mxlist(yys, z0, zmin, return.ix = TRUE)
-    })
-    max.perm <- do.call(rbind, max.perm)
-  }
+
+  max.perm <- data.frame("mx"=c(), "ix"=c(), "iv1"=c(), "iv2"=c())
+  stats.perm <- apply(perms, MARGIN=2, FUN=function(l){
+    huber_stats(dat[,-1], x=l, s0=s0, maxit=maxit)[3,]
+  })
+  stats.perm.smooth <- apply(stats.perm, MARGIN=2, FUN=function(yy){
+    ksmooth_0(x=pos, y=yy, bandwidth = bandwidth)[ix1:ix2]
+  })
+  vv <- apply(stats.perm.smooth, MARGIN=1, FUN=var)
+
+  max.perm <- apply(stats.perm.smooth, MARGIN=2, FUN=function(yys){
+    mxlist(yys, z0, zmin, return.ix = TRUE)
+  })
+  max.perm <- do.call(rbind, max.perm)
 
   if(nrow(max.perm) > 0){
     #Convert positions
@@ -115,12 +111,12 @@ maxes_table <- function(dat.file, pheno.file, s0, zmin, seed, n.perm,
   }
   if(save.perm.stats){
     R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
-              "z0"=z0, "zmin"=zmin, "n.perm"=n.perm,
+              "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv,
               "stats.smooth"=stats.smooth,"stats.perm" = stats.perm,
               "stats.perm.smooth"= stats.perm.smooth)
   }else{
     R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
-              "z0"=z0, "zmin"=zmin, "n.perm"=n.perm,
+              "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv,
               "stats.smooth" = stats.smooth)
   }
   save(R, file=out.file)
