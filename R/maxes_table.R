@@ -68,6 +68,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   if(!is.null(range)){
     new.range <- c(range[1]-ceiling(bandwidth/2)-buffer , range[2]+ceiling(bandwidth/2)+buffer)
     new.range[1] <- max(1, new.range[1])
+    cat("Expanded range: ", new.range, "\n")
     dat <- read_data_range1(dat.file, new.range, chunksize=chunksize)
     pos <- dat$pos
     ix1 <- min(which(pos >=range[1]))
@@ -80,7 +81,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
     ix2 <- nrow(dat)
   }
   pos.out = pos[ix1:ix2]
-
+  cat(dim(dat)[1], " positions.\n")
   #Adjust phenotype for covariates
   if(!is.null(pheno.transformation)){
     cat("Adjusting phenotype.\n")
@@ -111,7 +112,13 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
 
   if(is.null(zmin)){
     R <- list("dat.file"=dat.file, "pheno.file"= pheno.file,
+              "trait"=trait, "covariates"=covariates, 
+              "pheno.transformation"=pheno.transformation,
               "stats" = sts, "stats.smooth"=stats.smooth)
+    if(!is.null(out.file)){
+      save(R, file=out.file)
+      return(NULL)
+    }
     return(R)
   }
 
