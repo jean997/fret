@@ -18,7 +18,7 @@ choose_s0 <- function(beta, sds){
     return(cv)
   }
 
-  W <- optimize(fct, interval=range(sds), beta=beta,
+  W <- optimize(fct, interval=c(0, max(sds)), beta=beta,
                 sds=sds, ix=ix, tol=tol)
   return(W$minimum)
 }

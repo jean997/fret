@@ -214,7 +214,8 @@ read_data_range1 <- function(dat.file, range, chunksize=10000){
     dat <- read_delim(con, n_max=chunksize, skip=(ct-1)*chunksize,
                       col_names = h, col_types=col_types,
                       delim=" ")
-    pos <- dat[[1]][chunksize]
+    if(nrow(dat)==0) stop("ERROR: Range begins after end of file.\n")
+    pos <- dat[[1]][nrow(dat)]
     cat(pos, ".. ")
     seek(con, top)
     ct <- ct + 1
@@ -224,14 +225,15 @@ read_data_range1 <- function(dat.file, range, chunksize=10000){
     dd <- read_delim(con, n_max=chunksize, skip=(ct-1)*chunksize,
                      col_names = h, col_types=col_types,
                      delim=" ")
-    pos <- dd[[1]][chunksize]
-    cat(pos, ".. ")
-    dat <- rbind(dat, dd)
-    ct <- ct + 1
-    seek(con, top)
     if(nrow(dd)==0){
       pos <- Inf
+    }else{
+      pos <- dd[[1]][nrow(dd)]
+      dat <- rbind(dat, dd)
     }
+    cat(pos, ".. ")
+    ct <- ct + 1
+    seek(con, top)
   }
 
   ix1 <- min(which(dat$pos >= range[1]))
