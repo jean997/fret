@@ -74,7 +74,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
     ix2 <- max(which(pos <= range[2]))
   }else{
     col_types=paste0(c("i", rep("d", length(h)-1)), collapse="")
-    dat <- read_delim(dat.file, col_types=col_types)
+    dat <- read_delim(dat.file, col_types=col_types, delim=" ")
     pos <- dat$pos
     ix1 <- 1
     ix2 <- nrow(dat)
