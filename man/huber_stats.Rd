@@ -4,7 +4,7 @@
 \alias{huber_stats}
 \title{Calculate Huber test statistics}
 \usage{
-huber_stats(Y, x, s0 = 0, k = 1.345, maxit = 20)
+huber_stats(Y, x, s0 = 0, k = 1.345, maxit = 50)
 }
 \arguments{
 \item{Y}{matrix (p x n)}
