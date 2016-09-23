@@ -67,6 +67,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   #Range
   if(!is.null(range)){
     new.range <- c(range[1]-ceiling(bandwidth/2)-buffer , range[2]+ceiling(bandwidth/2)+buffer)
+    new.range[1] <- max(1, new.range[1])
     dat <- read_data_range1(dat.file, new.range, chunksize=chunksize)
     pos <- dat$pos
     ix1 <- min(which(pos >=range[1]))
@@ -83,7 +84,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   #Adjust phenotype for covariates
   if(!is.null(pheno.transformation)){
     cat("Adjusting phenotype.\n")
-    yadj <- apply(dat[,-1], FUN=function(y){
+    yadj <- apply(dat[,-1], MARGIN=2, FUN=function(y){
       pheno.transformation(y)
     })
     if(any(is.na(yadj)) | any(!is.finite(yadj))) stop("ERROR: Phenotype adjustment gives infinite or missing value.\n")
@@ -91,7 +92,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   }
   if(length(covariates) > 0){
     cat("Regressing covariates on phenotype.\n")
-    yadj <- apply(dat[,-1], FUN=function(y){
+    yadj <- apply(dat[,-1], MARGIN=2, FUN=function(y){
       ff <- as.formula(paste0("y~", paste0(covariates, collapse="+")))
       fity <- lm.func(ff, X)
       fity$residuals
@@ -218,7 +219,8 @@ read_data_range1 <- function(dat.file, range, chunksize=10000){
     seek(con, top)
     ct <- ct + 1
   }
-  while(pos < range[2]){
+  end  <- FALSE
+  while(pos < range[2] & !end ){
     cat(ct, " ")
     dd <- read_delim(con, n_max=chunksize, skip=(ct-1)*chunksize,
                      col_names = h, col_types=col_types,
@@ -228,6 +230,7 @@ read_data_range1 <- function(dat.file, range, chunksize=10000){
     dat <- rbind(dat, dd)
     ct <- ct + 1
     seek(con, top)
+    if(nrow(dd)==0) end <- TRUE
   }
 
   ix1 <- min(which(dat$pos >= range[1]))
