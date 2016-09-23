@@ -92,7 +92,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   }
   if(length(covariates) > 0){
     cat("Regressing covariates on phenotype.\n")
-    yadj <- apply(dat[,-1], MARGIN=2, FUN=function(y){
+    yadj <- apply(dat[,-1], MARGIN=1, FUN=function(y){
       ff <- as.formula(paste0("y~", paste0(covariates, collapse="+")))
       fity <- lm.func(ff, X)
       fity$residuals
@@ -235,5 +235,6 @@ read_data_range1 <- function(dat.file, range, chunksize=10000){
 
   ix1 <- min(which(dat$pos >= range[1]))
   ix2 <- max(which(dat$pos <= range[2]))
+  close(con)
   return(dat[ix1:ix2,])
 }
