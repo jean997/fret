@@ -13,7 +13,7 @@
 #'@param target.fdr Target fdr values (vector)
 #' @return A list with items z, Robs, and fdr.
 #'@export
-fret_step2 <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8){
+fret_rates <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8){
 
   #Check inputs
   stopifnot(ncol(segment.bounds)==3)
@@ -104,7 +104,7 @@ fret_step2 <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8)
               "max.perm"=max.perm, "nbp"=nbp, "zmin"=zmin))
 }
 #'@export
-fret_step3 <- function(obj, target.fdr){
+fret_thresholds <- function(obj, target.fdr){
 
   if(any(target.fdr < min(obj$max1$fdr))) cat("Warining: Some requested FDR levels not possible.\n")
   target.fdr <- target.fdr[target.fdr >= min(obj$max1$fdr)]
