@@ -158,7 +158,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   })
   stats.perm <- sts.perm[ seq(3, nrow(sts.perm), by=3),]
   beta.perm <- sts.perm[ seq(1, nrow(sts.perm), by=3),]
-  sd.perm <- sts.perm[ seq(1, nrow(sts.perm), by=3),]
+  sd.perm <- sts.perm[ seq(2, nrow(sts.perm), by=3),]
   stats.perm.smooth <- apply(stats.perm, MARGIN=2, FUN=function(yy){
     smooth.func(x=pos, y=yy, bandwidth = bandwidth)
   })
