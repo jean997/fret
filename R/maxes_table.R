@@ -32,7 +32,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   s <- length(zmin)
   stopifnot(s %in% c(0, 1, 2))
   if(!is.null(pheno.transformation)) stopifnot("function" %in% class(pheno.transformation))
-
+  chunksize <- floor(chunksize)
   #Read phenotype
   X <- read_delim(pheno.file, delim=" ")
   if(!all(trait %in% names(X))) stop("ERROR: I didn't find colunns matching the specified trait name in the phenotype file.\n")
@@ -112,7 +112,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
 
   if(is.null(zmin)){
     R <- list("dat.file"=dat.file, "pheno.file"= pheno.file,
-              "trait"=trait, "covariates"=covariates, 
+              "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
               "stats" = sts, "stats.smooth"=stats.smooth)
     if(!is.null(out.file)){
@@ -139,17 +139,26 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   if(!is.null(range)) max1 <- max1[max1$mx >= range[1] & max1$mx <= range[2],]
   if(n.perm==0){
     R <- list("max1"=max1,"file"=dat.file,
+              "range"=range, "trait"=trait, "covariates"=covariates,
+              "pheno.transformation"=pheno.transformation,
               "stats" = sts, "stats.smooth"=stats.smooth,
               "z0"=z0, "zmin"=zmin)
+    if(!is.null(out.file)){
+      save(R, file=out.file)
+      return(NULL)
+    }
     return(R)
   }
 
   #Permutation stats
   cat("Calculating permutation statistics...\n")
   max.perm <- data.frame("mx"=c(), "ix"=c(), "iv1"=c(), "iv2"=c())
-  stats.perm <- apply(perms, MARGIN=2, FUN=function(l){
-    stat.func(dat[,-1], x=l, s0=s0)[3,]
+  sts.perm <- apply(perms, MARGIN=2, FUN=function(l){
+   stat.func(dat[,-1], x=l, s0=s0)
   })
+  stats.perm <- sts.perm[ seq(3, nrow(sts.perm), by=3),]
+  beta.perm <- sts.perm[ seq(1, nrow(sts.perm), by=3),]
+  sd.perm <- sts.perm[ seq(1, nrow(sts.perm), by=3),]
   stats.perm.smooth <- apply(stats.perm, MARGIN=2, FUN=function(yy){
     smooth.func(x=pos, y=yy, bandwidth = bandwidth)
   })
@@ -172,12 +181,19 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   if(save.perm.stats){
     R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
               "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv,
-              "stats.smooth"=stats.smooth,"stats.perm" = cbind(pos, stats.perm),
+              "range"=range, "trait"=trait, "covariates"=covariates,
+              "pheno.transformation"=pheno.transformation,
+              "stats"=sts, "stats.smooth"=stats.smooth,
+              "stats.perm" = cbind(pos, stats.perm),
+              "beta.perm" = cbind(pos, beta.perm),
+              "sd.perm" = cbind(pos, sd.perm),
               "stats.perm.smooth"= cbind(pos, stats.perm.smooth))
   }else{
     R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
               "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv,
-              "stats.smooth" = stats.smooth)
+              "range"=range, "trait"=trait, "covariates"=covariates,
+              "pheno.transformation"=pheno.transformation,
+              "stats"=sts, "stats.smooth" = stats.smooth)
   }
   if(!is.null(out.file)){
     save(R, file=out.file)
