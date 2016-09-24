@@ -23,7 +23,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   #smoother type
   smoother <- match.arg(smoother)
   if(smoother=="ksmoooth_0"){
-    smooth.func <- ksmooth_0
+    smooth.func <- function(x, y, bandwidth){ksmooth_0_old(x, y,x bandwidth)}
   }else{
     smooth.func <- function(x, y, bandwidth){ ksmooth(x=x, y=y, x.points=x, bandwidth=bandwidth)$y}
   }
