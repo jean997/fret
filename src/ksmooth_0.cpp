@@ -2,8 +2,8 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector ksmooth_0_cpp(NumericVector x,  NumericVector y, double bandwidth,
-                NumericVector xout){
+void ksmooth_0_cpp(NumericVector x,  NumericVector y, double bandwidth,
+                NumericVector xout, NumericVector yout){
   //y.out <- sapply(x, FUN=function(xx){
   //  sum(y[ x <= (xx+bandwidth/2) & x >= (xx - bandwidth/2)])/(bandwidth+1)
   //})
@@ -11,7 +11,7 @@ NumericVector ksmooth_0_cpp(NumericVector x,  NumericVector y, double bandwidth,
   int k = xout.size();
   int l;
   int j = x.size();
-  NumericVector yout(k);
+  //NumericVector yout(k);
   double s;
   double left;
   double right;
@@ -30,5 +30,4 @@ NumericVector ksmooth_0_cpp(NumericVector x,  NumericVector y, double bandwidth,
     }
     yout[i] = s/bandwidth;
   }
-  return yout;
 }

@@ -6,27 +6,27 @@
 using namespace Rcpp;
 
 // double_me3
-int double_me3(int x);
-RcppExport SEXP fret_double_me3(SEXP xSEXP) {
+void double_me3(NumericVector x, NumericVector y);
+RcppExport SEXP fret_double_me3(SEXP xSEXP, SEXP ySEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(double_me3(x));
-    return rcpp_result_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    double_me3(x, y);
+    return R_NilValue;
 END_RCPP
 }
 // ksmooth_0_cpp
-NumericVector ksmooth_0_cpp(NumericVector x, NumericVector y, double bandwidth, NumericVector xout);
-RcppExport SEXP fret_ksmooth_0_cpp(SEXP xSEXP, SEXP ySEXP, SEXP bandwidthSEXP, SEXP xoutSEXP) {
+void ksmooth_0_cpp(NumericVector x, NumericVector y, double bandwidth, NumericVector xout, NumericVector yout);
+RcppExport SEXP fret_ksmooth_0_cpp(SEXP xSEXP, SEXP ySEXP, SEXP bandwidthSEXP, SEXP xoutSEXP, SEXP youtSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type xout(xoutSEXP);
-    rcpp_result_gen = Rcpp::wrap(ksmooth_0_cpp(x, y, bandwidth, xout));
-    return rcpp_result_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type yout(youtSEXP);
+    ksmooth_0_cpp(x, y, bandwidth, xout, yout);
+    return R_NilValue;
 END_RCPP
 }

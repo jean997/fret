@@ -1,7 +1,11 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 // [[Rcpp::export]]
-int double_me3(int x) {
+void double_me3(NumericVector x, NumericVector y) {
+  int k = x.size();
+  int i;
   // takes a numeric input and doubles it
-  return 2 * x;
+  for(i=0; i <= k; i++){
+    y[i] = 2*x[i];
+  }
 }
