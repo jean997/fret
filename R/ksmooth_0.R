@@ -45,16 +45,7 @@ ksmooth_0 <- function(x, y, xout, bandwidth){
         " with ", bandwidth + 1, "\n")
     bandwidth <- bandwidth + 1
   }
-  yout <- rep(0, length(xout))
 
-  res <- .C("ksmooth_0_cpp_R",
-               x = as.double(x),
-               y = as.double(y),
-               bandwidth = as.double(bandwidth),
-               xout = as.double(xout),
-               yout = as.double(yout),
-               lx=as.integer(length(x)),
-               lxout=as.integer(length(xout)), package="fret")
-  return(res$yout)
+  yout <- ksmooth_0_cpp(x, y, xout, bandwidth)
 }
 
