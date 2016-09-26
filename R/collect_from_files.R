@@ -60,22 +60,38 @@ collect_from_files <- function(file.list, chrom, segment.bounds=NULL, min.length
     mp <- mp[trim.ix,]
     max.perm <- rbind(max.perm, mp)
   }
-  R <- list("max1"=max1, "max.perm"=max.perm,
+
+  ret <- list("max1"=max1, "max.perm"=max.perm, "zmin"=R$zmin,
             "segment.bounds"=segment.bounds)
-  return(R)
+  return(ret)
 }
 
 trim_maxperm <- function(mx, segment, zmin, nmin=10){
   s <- length(zmin)
-  if(s==1){
-    ix <- which(mx > zmin)
-    if(length(ix) >= nmin) return(ix)
-    return(order(mx, decreasing = TRUE)[1:nmin])
+  segs <- unique(segment)
+  ix_tot <- c()
+  for(seg in segs){
+    ix_s <- which(segment==seg)
+    my_mx <- mx[ix_s]
+    if(s==1){
+      ix <- which(my_mx > zmin)
+      if(length(ix) >= nmin){
+        n <- min(nmin, length(ix_s))
+        ix <- order(my_mx, decreasing = TRUE)[1:n]
+      }
+    }else{
+      #s==2
+      ixpos <- which(my_mx > zmin[1])
+      if(length(ixpos) < nmin){ 
+        ixpos <- order(my_mx, decreasing=TRUE)[1:min(nmin, sum(my_mx > 0))]
+      }
+      ixneg <- which(my_mx < zmin[2])
+      if(length(ixneg) < nmin){
+        ixneg <- order(my_mx, decreasing=FALSE)[1:min(nmin, sum(my_mx < 0))]
+      }
+      ix <- c(ixpos, ixneg)
+    }
+    ix_tot <- c(ix_tot, ix_s[ix])
   }
-  #s==2
-  ixpos <- which(mx > zmin[1])
-  if(length(ixpos) < nmin) ixpos <- order(mx, decreasing=TRUE)[1:nmin]
-  ixneg <- which(mx < zmin[2])
-  if(length(ixneg) < nmin) ixneg <- order(mx, decreasing=FALSE)[1:nmin]
-  return(c(ixpos, ixneg))
+  return(ix_tot)
 }

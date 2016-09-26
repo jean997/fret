@@ -54,11 +54,11 @@ fret_rates <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8)
 
   max.lambda.pb <- matrix(nrow=s, ncol=K)
   for(i in 1:K){
-
+    cat(i, "\n")
     m1.ix <- which(max1$segment==i)
     perm.ix <- which(max.perm$segment==i)
 
-    if(length(m1.ix)==0 & length(perm.ix)==0){
+    if(length(m1.ix)==0 & length(perm.ix)< 2){
       max.lambda.pb[, i] <- 0
       next
     }
