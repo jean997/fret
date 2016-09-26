@@ -4,7 +4,7 @@
 collect_from_files <- function(file.list, chrom, segment.bounds=NULL, min.length=NULL, q=0.05){
   stopifnot(length(chrom)==length(file.list))
   cc <- unique(chrom)
-  if(!is.null(segment.bounds)){
+  if(is.null(segment.bounds)){
     cat("Collecting permutation variances and setting segment.bounds.\n")
     if(is.null(min.length)) stop("Please provide either min.length or segment.bounds.\n")
     segment.bounds <- data.frame("chrom"=c(), "start"=c(), "stop"=c())
