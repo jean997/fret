@@ -47,7 +47,7 @@ collect_from_files <- function(file.list, chrom, segment.bounds=NULL, min.length
       if(length(s)==0) return(NA)
       return(s)
     })
-    if(chrom[i]==chrom[i+1]){ #Don't split segments
+    if(i < length(chrom) & chrom[i]==chrom[i+1]){ #Don't split segments
       curr.segment <- max(segment)
       max.perm.save <- mp[segment==max(segment),]
       mp <- mp[segment < max(segment),]
