@@ -13,30 +13,29 @@
 #' the 25th percentile.
 #' @return 2 by K matrix listing interval endpoints.
 #'@export
-find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL,
-                          bandwidth=NULL, q=0.05){
+find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL, q=0.05){
   stopifnot(length(vv)==length(pos))
   if(is.null(bandwidth)) bandwidth <- min.length/2
   stopifnot(bandwidth > 0)
 
-  vvs <- ksmooth_0(x=pos, y=vv, xout=pos, bandwidth=bandwidth)
+  #vvs <- ksmooth_0(x=pos, y=vv, xout=pos, bandwidth=bandwidth)
   if(is.null(z0) & is.null(z)){
-    z0 <- quantile(vvs, 0.5)
-    z <- quantile(vvs, 1-q)
+    z0 <- quantile(vv, 0.5)
+    z <- quantile(vv, 1-q)
   }
 
   stopifnot(z0 > 0 & z >= z0)
-  stopifnot(all(vvs >= 0))
-  if(all(vvs < z)){
+  stopifnot(all(vv >= 0))
+  if(all(vv < z)){
     strts <- seq(min(pos), max(pos), by=min.length)
     stps <- strts + min.length-1
     stps[length(stps)] <- max(pos)
     return(cbind(strts, stps))
   }
-  ivls <- excursions(vvs, z0)
+  ivls <- excursions(vv, z0)
   #Max stat value inside each excurion
   bpoints <- apply(ivls, MARGIN=1, FUN=function(iv){
-    m <- max(vvs[iv[1]:iv[2]])
+    m <- max(vv[iv[1]:iv[2]])
     if(m >= z) return(iv)
     return(c())})
   bpoints <- unlist(bpoints)
