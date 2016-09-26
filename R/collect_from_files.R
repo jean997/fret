@@ -81,12 +81,18 @@ trim_maxperm <- function(mx, segment, zmin, nmin=10){
       }
     }else{
       #s==2
-      ixpos <- which(my_mx > zmin[1])
-      if(length(ixpos) < nmin){ 
+      if(sum(my_mx > 0) == 0){ 
+        ixpos <- c() 
+      }else if(sum(my_mx > zmin[1]) >= nmin){
+        ixpos <- which(my_mx > zmin[1])
+      }else{
         ixpos <- order(my_mx, decreasing=TRUE)[1:min(nmin, sum(my_mx > 0))]
       }
-      ixneg <- which(my_mx < zmin[2])
-      if(length(ixneg) < nmin){
+      if(sum(my_mx < 0) == 0){ 
+        ixneg <- c() 
+      }else if(sum(my_mx < zmin[2]) >= nmin){
+        ixneg <- which(my_mx < zmin[2])
+      }else{
         ixneg <- order(my_mx, decreasing=FALSE)[1:min(nmin, sum(my_mx < 0))]
       }
       ix <- c(ixpos, ixneg)

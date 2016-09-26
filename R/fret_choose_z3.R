@@ -54,7 +54,7 @@ fret_rates <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8)
 
   max.lambda.pb <- matrix(nrow=s, ncol=K)
   for(i in 1:K){
-    cat(i, "\n")
+    #cat(i, "\n")
     m1.ix <- which(max1$segment==i)
     perm.ix <- which(max.perm$segment==i)
 
@@ -193,7 +193,8 @@ get_thresh_with_rate1 <- function(ll, rate, np=4){
 
 
 get_rate_with_thresh <- function(ll, thresh, np=4){
-
+  if(sum(ll[,1] > 0) < 2 & thresh < 0) return(0)
+  if(sum(ll[,1] < 0) < 2 & thresh > 0) return(0)
   if(thresh > max(ll[,1])){
     ff <- lm(log10(ll[1:np, 2])~ ll[1:np, 1])
     return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
