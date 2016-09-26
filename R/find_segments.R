@@ -19,7 +19,7 @@ find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL,
   if(is.null(bandwidth)) bandwidth <- min.length/2
   stopifnot(bandwidth > 0)
 
-  vvs <- ksmooth_0(x=pos, y=vv, bandwidth=bandwidth)
+  vvs <- ksmooth_0(x=pos, y=vv, xout=pos, bandwidth=bandwidth)
   if(is.null(z0) & is.null(z)){
     z0 <- quantile(vvs, 0.5)
     z <- quantile(vvs, 1-q)
