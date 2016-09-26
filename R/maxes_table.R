@@ -176,7 +176,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
     max.perm$iv2 <- pos.out[max.perm$iv2]
     max.perm$chr <- chrom
     max.perm <- max.perm[order(max.perm$pos, decreasing = FALSE), c("mx", "chr", "pos", "iv1", "iv2")]
-    if(!is.null(range)) max.perm <- max.perm[max.perm$mx >= range[1] & max.perm$mx <= range[2],]
+    if(!is.null(range)) max.perm <- max.perm[max.perm$pos >= range[1] & max.perm$pos <= range[2],]
   }
   if(save.perm.stats){
     R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
