@@ -15,7 +15,7 @@
 #'@export
 find_segments <- function(vv, pos, min.length, z0=NULL, z=NULL, q=0.05){
   stopifnot(length(vv)==length(pos))
-  if(is.null(bandwidth)) bandwidth <- min.length/2
+  #if(is.null(bandwidth)) bandwidth <- min.length/2
   stopifnot(bandwidth > 0)
 
   #vvs <- ksmooth_0(x=pos, y=vv, xout=pos, bandwidth=bandwidth)
