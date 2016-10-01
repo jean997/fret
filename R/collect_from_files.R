@@ -75,7 +75,9 @@ trim_maxperm <- function(mx, segment, zmin, nmin=10){
     my_mx <- mx[ix_s]
     if(s==1){
       ix <- which(my_mx > zmin)
-      if(length(ix) >= nmin){
+      if(length(ix)==0){
+        ix <- c()
+      }else if(length(ix) <= nmin){
         n <- min(nmin, length(ix_s))
         ix <- order(my_mx, decreasing = TRUE)[1:n]
       }
