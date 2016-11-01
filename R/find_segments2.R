@@ -34,7 +34,7 @@ find_segments2 <- function(vv, pos, min.length, q=0.05){
   stps <- c()
   i <- 1
   n <- 1
-  while(stps[length(stps)] <= pos[p]){
+  while(max(stps) <= pos[p]){
 
     new.end <- strts[i] + min.length -1
 

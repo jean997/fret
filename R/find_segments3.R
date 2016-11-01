@@ -32,14 +32,17 @@ find_segments3 <- function(vv, pos, min.length, q=0.05){
   stps <- c()
   i <- 1
   n <- 1
-  while(stps[length(stps)] < pos[p]){
+  while(max(stps) < pos[p]){
     min.end <- strts[i] + min.length-1
     if(any(strts[i] <= bp[,1] & min.end >= bp[,1])){
-      #Interval contains at least one high variance region. Make the interval as short as possible.
-      ix <- which(strts[i] <= bp[,1] & min.end >= bp[,1])
-      stps[i] <- bp[max(ix), 2]+1
-      i <- i + 1
-      strts[i] <- stps[i-1]+1
+      #Interval contains high variance regions
+      #Make interval as short as possible
+      if(any(bp[,1] <= min.end & bp[,2] >=min.end)){
+        ix <- which(bp[,1] <= min.end & bp[,2] >=min.end)
+        stps[i] <- bp[ix, 2]+1
+      }else{
+        stps[i] <- min.end
+      }
     }else{
       #There are no high variance regions in this interval. Make the interval as long as possible
       if(all(bp[,2] <= strts[i])){
@@ -47,11 +50,13 @@ find_segments3 <- function(vv, pos, min.length, q=0.05){
       }else{
         ix <- min(which(bp[,1]) >= min.end)
         stps[i] <- bp[ix,2]-1
-        i <- i+1
-        strts[i] <- stps[i-1] + 1
       }
     }
+    i <- i+1
+    strts[i] <- stps[i-1]+1
   }
+  strts <- strts[-i]
+  i <- i-1
   if(strts[i]-stps[i]+1 < min.length){
     strts <- strts[-i]
     stps <- stps[-i]
