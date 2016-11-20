@@ -4,7 +4,7 @@
 \alias{find_segments}
 \title{Use variance of smoothed  permutation test statistics to define interval endpoints}
 \usage{
-find_segments(vv, pos, min.length, z0 = NULL, z = NULL, q = 0.05)
+find_segments(vv, pos, min.length, q = 0.05)
 }
 \arguments{
 \item{vv}{Variance of smoothed permutation test statistics}
@@ -13,7 +13,7 @@ find_segments(vv, pos, min.length, z0 = NULL, z = NULL, q = 0.05)
 
 \item{min.length}{Minimum interval length}
 
-\item{z0, }{z Two thresholds used to define ``high variance regions''.}
+\item{q}{Quantile for upper limit for definition of high variance region. Currently 0.05}
 }
 \value{
 2 by K matrix listing interval endpoints.
@@ -22,10 +22,5 @@ find_segments(vv, pos, min.length, z0 = NULL, z = NULL, q = 0.05)
 Use variance of smoothed  permutation test statistics to define interval endpoints.
 Intervals are placed so that high variance regions are separated from each other and from low variance
 regions.
-}
-\details{
-Currently, find_segments will smooth vv using a bandwidth of min.length/2.
-If you don't supply z and z0, z will be the 75th percentlie of these smoothed values and z0 will be
-the 25th percentile.
 }
 

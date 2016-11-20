@@ -1,11 +1,36 @@
+
+#' Calculate FRET test statistics
+#' @param pheno.file File containing genomic phenotype
+#' @param trait.file File containing trait information
+#' @param s0 Variance inflation constant
+#' @param seed Seed
+#' @param n.perm Number of permutations.
+#' If n.perm=0, only test statistics for unpermuted data will be calculated
+#' @param zmin Minimum threshold (may be missing if n.perm=0)
+#' @param z0 Merging threshold. If missing z0 = 0.3*zmin.
+#' @param pheno.transformation If the phenotype is to be transformed, provide a function taking one argument
+#' @param trait Name of trait (should match header of trait.file)
+#' @param covariates List of covariates found in trait.file to adjust for
+#' @param save.perm.stats Should the permutation test statistics be saved?
+#' @param range Base-pair range. If missing, stats for the whole file will be calculated
+#' @param chunksize Size of chunks to read at one time
+#' @param bandwidth Smoothing bandwidth
+#' @param smooother Either "ksmooth_0" or "ksmooth". The ksmooth_0 smoother treats base-pairs
+#' with no data as though the phenotype at that position is equal to zero for all samples (appropriate for DNase-seq data).
+#' The ksmooth smoother treats these base-pairs as missing (appropriate for bisulfite sequencing data).
+#' @param stat.type Either "huber" or "lm"
+#' @param maxit Maximum iterations for Huber estimator.
+#' @param out.file Name an output file
+#' @param chrom Name of chromosome to print in output file
 #'@export
-fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
+fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=zmin*0.3,
                         pheno.transformation=NULL, trait=c("x"), covariates=c(),
-                        z0=zmin*0.3, save.perm.stats=FALSE, range=NULL, chunksize=10000,
-                        bandwidth=50, buffer=2*bandwidth, out.file=NULL, chrom="chr1",
-                        stat.type=c("huber", "lm"), maxit=50, smoother=c("ksmooth_0", "ksmooth")){
+                        save.perm.stats=FALSE, range=NULL, chunksize=10000,
+                        bandwidth=50, smoother=c("ksmooth_0", "ksmooth"),
+                        stat.type=c("huber", "lm"), maxit=50,
+                       out.file=NULL, chrom="chr1"){
   #Options
-  if(!length(trait) ==1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
+  if(length(trait) !=1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
   if(is.null(zmin)) stopifnot(n.perm==0)
   #stat type
   stat.type <- match.arg(stat.type)
@@ -33,12 +58,16 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   stopifnot(s %in% c(0, 1, 2))
   if(!is.null(pheno.transformation)) stopifnot("function" %in% class(pheno.transformation))
   chunksize <- floor(chunksize)
-  #Read phenotype
-  X <- read_delim(pheno.file, delim=" ")
+  buffer <- 2*bandwidth
+
+
+
+  #Read trait
+  X <- read_delim(trait.file, delim=" ")
   if(!all(trait %in% names(X))) stop("ERROR: I didn't find colunns matching the specified trait name in the phenotype file.\n")
   if(!all(covariates %in% names(X))) stop("ERROR: I didn't find colunns matching the specified covariates in the phenotype file.\n")
   n <- nrow(X)
-  #Adjust phenotype for covariates
+  #Adjust trait for covariates
   if(length(covariates) > 0){
     ff <- as.formula(paste0(trait, "~", paste0(covariates, collapse="+")))
     fitx <- lm.func(ff, X)
@@ -56,26 +85,27 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
 
   #Read data
   #Read header
-  h <- readLines(dat.file, n=1)
+  h <- readLines(pheno.file, n=1)
   h <- unlist(strsplit(h, " "))
   if(! h[1]=="pos") stop("First column of data matrix should be genomic position and be named 'pos'")
 
-  #Make sure the phenotype is sorted correctly
-  if(!all(h[-1] %in% X[[1]])) stop("Not all of the samples in the data file are in the phenotype file.\n")
+  #Make sure the trait data is sorted correctly
+  if(!all(h[-1] %in% X[[1]])) stop("Not all of the samples in ", pheno.file, " are in ", trait.file, ".\n")
   x <- x[match(h[-1], X[[1]])]
   X <- X[match(h[-1], X[[1]]), ]
   #Range
   if(!is.null(range)){
+    #We need to look at data beyond the specified range to get the smoothing right
     new.range <- c(range[1]-ceiling(bandwidth/2)-buffer , range[2]+ceiling(bandwidth/2)+buffer)
     new.range[1] <- max(1, new.range[1])
-    cat("Expanded range: ", new.range, "\n")
-    dat <- read_data_range1(dat.file, new.range, chunksize=chunksize)
+    #cat("Expanded range: ", new.range, "\n")
+    dat <- read_data_range1(pheno.file, new.range, chunksize=chunksize)
     pos <- dat$pos
     ix1 <- min(which(pos >=range[1]))
     ix2 <- max(which(pos <= range[2]))
   }else{
     col_types=paste0(c("i", rep("d", length(h)-1)), collapse="")
-    dat <- read_delim(dat.file, col_types=col_types, delim=" ")
+    dat <- read_delim(pheno.file, col_types=col_types, delim=" ")
     pos <- dat$pos
     ix1 <- 1
     ix2 <- nrow(dat)
@@ -111,7 +141,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   stats.smooth <- data.frame("pos"=pos.out, "ys"=ys[ix1:ix2])
 
   if(is.null(zmin)){
-    R <- list("dat.file"=dat.file, "pheno.file"= pheno.file,
+    R <- list("pheno.file"=pheno.file, "trait.file"= trait.file,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
               "stats" = sts, "stats.smooth"=stats.smooth)
@@ -138,7 +168,7 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   max1 <- max1[, c("mx", "chr", "pos", "iv1", "iv2")]
   if(!is.null(range)) max1 <- max1[max1$mx >= range[1] & max1$mx <= range[2],]
   if(n.perm==0){
-    R <- list("max1"=max1,"file"=dat.file,
+    R <- list("max1"=max1,"file"=pheno.file,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
               "stats" = sts, "stats.smooth"=stats.smooth,
@@ -179,18 +209,18 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
     if(!is.null(range)) max.perm <- max.perm[max.perm$pos >= range[1] & max.perm$pos <= range[2],]
   }
   if(save.perm.stats){
-    R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
+    R <- list("max1"=max1, "max.perm"=max.perm, "file"=pheno.file,
               "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
-              "stats"=sts, "stats.smooth"=stats.smooth,
+              "stats"=sts, "stats.smooth"=stats.smooth, "pos"=pos,
               "stats.perm" = cbind(pos, stats.perm),
               "beta.perm" = cbind(pos, beta.perm),
               "sd.perm" = cbind(pos, sd.perm),
               "stats.perm.smooth"= cbind(pos, stats.perm.smooth))
   }else{
-    R <- list("max1"=max1, "max.perm"=max.perm, "file"=dat.file,
-              "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv,
+    R <- list("max1"=max1, "max.perm"=max.perm, "file"=pheno.file,
+              "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv, "pos"=pos,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
               "stats"=sts, "stats.smooth" = stats.smooth)
@@ -202,8 +232,8 @@ fret_stats <- function(dat.file, pheno.file, s0, seed, n.perm, zmin=NULL,
   return(R)
 }
 
-read_data_range0 <- function(dat.file, range, chunksize=10000){
-  con <- file(dat.file, "rb")
+read_data_range0 <- function(pheno.file, range, chunksize=10000){
+  con <- file(pheno.file, "rb")
   h <- read_lines(con, n_max=1)
   h <- unlist(strsplit(h, " "))
   pos <- 0
@@ -224,8 +254,8 @@ read_data_range0 <- function(dat.file, range, chunksize=10000){
 
 #Use this until readr gets fixed?
 #Right now readr always dumps you at the end even if you only read part of the file
-read_data_range1 <- function(dat.file, range, chunksize=10000){
-  con <- file(dat.file, "rb")
+read_data_range1 <- function(pheno.file, range, chunksize=10000){
+  con <- file(pheno.file, "rb")
   h <- readLines(con, n=1)
   h <- unlist(strsplit(h, " "))
   top <- seek(con)

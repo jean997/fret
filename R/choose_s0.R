@@ -1,4 +1,6 @@
-
+#' Select s0 using the method of Tusher, Tibshirani and Chu (2001)
+#' @param beta Effect size estimates
+#' @param sds Estimates of sqrt(var(beta))
 #'@export
 choose_s0 <- function(beta, sds){
   salpha <- as.numeric(quantile(sds, probs=seq(0.01, 0.99, by=0.01)))

@@ -103,6 +103,7 @@ fret_rates <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8)
   return(list("max1"=max1, "max.lambda.pb"=max.lambda.pb,
               "max.perm"=max.perm, "nbp"=nbp, "zmin"=zmin))
 }
+
 #'@export
 fret_thresholds <- function(obj, target.fdr){
 
