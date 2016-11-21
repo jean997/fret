@@ -28,7 +28,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
                         save.perm.stats=FALSE, range=NULL, chunksize=10000,
                         bandwidth=50, smoother=c("ksmooth_0", "ksmooth"),
                         stat.type=c("huber", "lm"), maxit=50,
-                       out.file=NULL, chrom="chr1"){
+                       out.file=NULL, chrom="chr1", parallel=FALSE){
   #Options
   if(length(trait) !=1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
   if(is.null(zmin)) stopifnot(n.perm==0)
@@ -38,7 +38,8 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     lm.func <- function(formula, data){
       rlm(formula, data=data, maxit=maxit)
     }
-    stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
+    if(!parallel) stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
+    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit)}
   }else if(staty.type=="lm"){
     lm.func <- function(formula, data){
       lm(formula, data=data)
@@ -144,6 +145,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     R <- list("pheno.file"=pheno.file, "trait.file"= trait.file,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
+              "bandwidth"=bandwidth, "smoother"=smoother,
               "stats" = sts, "stats.smooth"=stats.smooth)
     if(!is.null(out.file)){
       save(R, file=out.file)
@@ -171,6 +173,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     R <- list("max1"=max1,"file"=pheno.file,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
+              "bandwidth"=bandwidth, "smoother"=smoother,
               "stats" = sts, "stats.smooth"=stats.smooth,
               "z0"=z0, "zmin"=zmin)
     if(!is.null(out.file)){
