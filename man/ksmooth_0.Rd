@@ -4,7 +4,8 @@
 \alias{ksmooth_0}
 \title{Kernel smoother assuming missing positions are 0}
 \usage{
-ksmooth_0(x, y, xout, bandwidth)
+ksmooth_0(x, y, xout, bandwidth, stitch = NULL, parallel = FALSE,
+  cl = NULL)
 }
 \arguments{
 \item{x}{Vector of positions}
