@@ -9,7 +9,7 @@ fret_stats(pheno.file, trait.file, s0, seed, n.perm, zmin = NULL, z0 = zmin
   save.perm.stats = FALSE, range = NULL, chunksize = 10000,
   bandwidth = 50, smoother = c("ksmooth_0", "ksmooth"),
   stat.type = c("huber", "lm"), maxit = 50, out.file = NULL,
-  chrom = "chr1", parallel = FALSE)
+  chrom = "chr1", parallel = TRUE)
 }
 \arguments{
 \item{pheno.file}{File containing genomic phenotype}

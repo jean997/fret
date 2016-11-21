@@ -28,7 +28,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
                         save.perm.stats=FALSE, range=NULL, chunksize=10000,
                         bandwidth=50, smoother=c("ksmooth_0", "ksmooth"),
                         stat.type=c("huber", "lm"), maxit=50,
-                       out.file=NULL, chrom="chr1", parallel=FALSE){
+                       out.file=NULL, chrom="chr1", parallel=TRUE){
   #Options
   if(length(trait) !=1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
   if(is.null(zmin)) stopifnot(n.perm==0)
@@ -220,13 +220,15 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
               "stats.perm" = cbind(pos, stats.perm),
               "beta.perm" = cbind(pos, beta.perm),
               "sd.perm" = cbind(pos, sd.perm),
+              "bandwidth"=bandwidth, "smoother"=smoother,
               "stats.perm.smooth"= cbind(pos, stats.perm.smooth))
   }else{
     R <- list("max1"=max1, "max.perm"=max.perm, "file"=pheno.file,
               "z0"=z0, "zmin"=zmin, "n.perm"=n.perm, "perm.var"=vv, "pos"=pos,
               "range"=range, "trait"=trait, "covariates"=covariates,
               "pheno.transformation"=pheno.transformation,
-              "stats"=sts, "stats.smooth" = stats.smooth)
+              "stats"=sts, "stats.smooth" = stats.smooth,
+              "bandwidth"=bandwidth, "smoother"=smoother)
   }
   if(!is.null(out.file)){
     save(R, file=out.file)
