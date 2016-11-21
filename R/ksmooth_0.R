@@ -67,7 +67,7 @@ ksmooth_0 <- function(x, y, xout, bandwidth, stitch=NULL, parallel=FALSE, cl=NUL
     no_cores <- detectCores()-1
     cl <- makeCluster(no_cores, type="FORK")
   }
-  yout <- unlist(parLapply(1:N, FUN=function(ix){
+  yout <- unlist(parLapply(cl, 1:N, FUN=function(ix){
     ksmooth_0_cpp(x[strts1[ix]:stps1[ix]],
                   y[strts1[ix]:stps1[ix]], xout[strts2[ix]:stps2[ix]], bandwidth)
   }))
