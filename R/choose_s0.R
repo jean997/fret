@@ -28,13 +28,19 @@ choose_s0 <- function(beta, sds){
 }
 
 #'@export
-choose_zmin <- function(beta, sds, s0, pos, bandwidth, smoother=c("ksmooth_0", "ksmooth"), zmin_quantile=0.9){
+choose_zmin <- function(beta, sds, s0, pos, bandwidth,
+                        smoother=c("ksmooth_0", "ksmooth"), zmin_quantile=0.9,
+                        stitch=1e5, parallel=TRUE){
   stopifnot(length(quantile) %in% c(1, 2))
   smoother <- match.arg(smoother)
   if(smoother=="ksmoooth_0"){
-    smooth.func <- ksmooth_0
+    smooth.func <- function(x, y, bandwidth){
+      ksmooth_0(x, y, bandwidth, stitch=stitch, parallel=parallel)
+    }
   }else{
-    smooth.func <- function(x, y, bandwidth){ ksmooth(x=x, y=y, x.points=x, bandwidth=bandwidth)$y}
+    smooth.func <- function(x, y, bandwidth){
+      ksmooth(x=x, y=y, x.points=x, bandwidth=bandwidth)$y
+    }
   }
   y <- beta/(sds + s0)
   ys <-smooth.func(pos, y, bandwidth)
