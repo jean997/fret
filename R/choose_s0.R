@@ -3,9 +3,6 @@
 #' @param sds Estimates of sqrt(var(beta))
 #'@export
 choose_s0 <- function(beta, sds){
-  salpha <- as.numeric(quantile(sds, probs=seq(0.01, 0.99, by=0.01)))
-  nn <- length(salpha)
-  ix <- sapply(sds, FUN=function(w){ sum(w >= c(0, salpha))})
 
   if(any(is.na(sds))){
     nmiss <- sum(is.na(sds))
@@ -14,6 +11,10 @@ choose_s0 <- function(beta, sds){
     beta <- beta[-ix]
     sds <- sds[-ix]
   }
+
+  salpha <- as.numeric(quantile(sds, probs=seq(0.01, 0.99, by=0.01)))
+  nn <- length(salpha)
+  ix <- sapply(sds, FUN=function(w){ sum(w >= c(0, salpha))})
 
   fct <- function(s0, beta, sds, ix){
     cat(s0, " ")
