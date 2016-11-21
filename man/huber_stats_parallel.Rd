@@ -21,6 +21,6 @@ huber_stats_parallel(Y, x, cl = NULL, s0 = 0, k = 1.345, maxit = 50)
 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
 }
 \description{
-Calculate two sample Huber
+Calculate Huber test statistics with variance infaltion constant using parallel package
 }
 
