@@ -7,9 +7,13 @@ choose_s0 <- function(beta, sds){
   nn <- length(salpha)
   ix <- sapply(sds, FUN=function(w){ sum(w >= c(0, salpha))})
 
-  #v <- as.numeric(by(data=beta/sds, INDICES = ix, FUN = mad, na.rm=TRUE))
-  #cvs <- sd(v)/mean(v)
-  #tol <- max(min(sds[sds > 0]), 1e-3)
+  if(any(is.na(sds))){
+    nmiss <- sum(is.na(sds))
+    cat("Warning: ", nmiss, " positions have missing sd.\n")
+    ix <- which(is.na(sds))
+    beta <- beta[-ix]
+    sds <- sds[-ix]
+  }
 
   fct <- function(s0, beta, sds, ix){
     cat(s0, " ")
@@ -19,9 +23,6 @@ choose_s0 <- function(beta, sds){
     cat(cv, "\n")
     return(cv)
   }
-
-  #W <- optimize(fct, interval=c(log10(min(sds))-1, max(log10(sds))), beta=beta,
-  #              sds=sds, ix=ix, tol=0.1)
 
   zz <- sapply(salpha, FUN=fct, beta=beta, sds=sds, ix=ix)
   return(salpha[which.min(zz)])
@@ -42,6 +43,20 @@ choose_zmin <- function(beta, sds, s0, pos, bandwidth,
       ksmooth(x=x, y=y, x.points=x, bandwidth=bandwidth)$y
     }
   }
+
+  if(any(is.na(sds))){
+    nmiss <- sum(is.na(sds))
+    cat("Warning: ", nmiss, " positions have missing sd -- will be treated as zero if s0 > 0.\n")
+    ix <- which(is.na(sds))
+    if(s0 > 0){
+      sds[ix] <- 0
+    }else{
+      beta <- beta[-ix]
+      sds <- sds[-ix]
+      pos <- pos[-ix]
+    }
+  }
+
   y <- beta/(sds + s0)
   ys <-smooth.func(pos, y, bandwidth)
   if(length(zmin_quantile)==1) return(quantile(abs(ys), zmin_quantile))
