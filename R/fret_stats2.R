@@ -102,7 +102,7 @@ fret_stats2 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
 
   #For now read in the entire file
   col_types=paste0(c("i", rep("d", length(h)-1)), collapse="")
-  dat <- read_delim(con, col_types=col_types, delim=" ", col_names=header)
+  dat <- read_delim(con, col_types=col_types, delim=" ", col_names=h)
   close(con)
   nn <- nrow(dat)
   #Range
