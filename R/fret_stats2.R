@@ -142,7 +142,7 @@ fret_stats2 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   ###############################################
   cat("Calculating test statistics..\n")
   sts <- stat.func(Y=dat[, -1], x=x,s0=s0)
-  sts <- data.frame(t(my.sts))
+  sts <- data.frame(t(sts))
   names(sts) <- c("Beta", "SD", "stat")
   sts$pos <- dat[[1]]
 
