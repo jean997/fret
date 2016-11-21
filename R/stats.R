@@ -1,5 +1,6 @@
 #'@import MASS
 #'@import readr
+#'@import parallel
 
 #'@title Calculate Huber test statistics
 #'@description Calculate two sample Huber
@@ -47,5 +48,6 @@ huber_stats_parallel <- function(Y, x, cl=NULL, s0 = 0,  k=1.345, maxit=50){
     if(is.na(b1/(s+s0))) return(c(b1, s, 0))
     return(c(b1, s, b1/(s+s0)))
   })
+  stopCluster(cl)
   return(B)
 }
