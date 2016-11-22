@@ -129,6 +129,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   system(paste0("mkdir ", tdir))
 
   while(!done){
+    cat("Chunk ", read.ct, "(", keep.ct, ")\n")
     #read data
     goto(df.laf, max(0, (read.ct-1)*chunksize-bandwidth))
     dat <- next_block(df.laf, nrows=chunksize + 2*bandwidth)
