@@ -75,7 +75,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   ####################
   #  Read trait data #
   ####################
-  X <- read_delim(trait.file, delim=" ")
+  X <- readr::read_delim(trait.file, delim=" ")
   if(!all(trait %in% names(X))) stop("ERROR: I didn't find colunns matching the specified trait name in the phenotype file.\n")
   if(!all(covariates %in% names(X))) stop("ERROR: I didn't find colunns matching the specified covariates in the phenotype file.\n")
   n <- nrow(X)
@@ -196,7 +196,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     # Smooth (non-permutation) statistics#
     ######################################
     cat("Smoothing..\n")
-    ys <- smooth.func(x=dat[[1]], y=sts$stat,xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
+    ys <- smooth.func(x=dat[[1]], y=my.sts$stat,xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
     if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys)
       else sts.smooth <- cbind(sts.smooth, data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys))
 
