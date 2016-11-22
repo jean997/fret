@@ -53,9 +53,13 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   #smoother type
   smoother <- match.arg(smoother)
   if(smoother=="ksmooth_0"){
-    smooth.func <- function(x, y, xout, bandwidth){ksmooth_0(x, y,xout, bandwidth, stitch=1e5, parallel=parallel)}
+    smooth.func <- function(x, y, xout, bandwidth){
+      ksmooth_0(x, y,xout, bandwidth, stitch=floor(chunksize/100), parallel=parallel)
+    }
   }else if(smoother=="ksmooth"){
-    smooth.func <- function(x, y, xout, bandwidth){ ksmooth(x=x, y=y, x.points=xout, bandwidth=bandwidth)$y}
+    smooth.func <- function(x, y, xout, bandwidth){
+      ksmooth(x=x, y=y, x.points=xout, bandwidth=bandwidth)$y
+    }
   }
 
   stopifnot(length(z0)==length(zmin) | is.null(zmin))
@@ -198,7 +202,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     cat("Smoothing..\n")
     ys <- smooth.func(x=dat[[1]], y=my.sts$stat,xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
     if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys)
-      else sts.smooth <- cbind(sts.smooth, data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys))
+      else sts.smooth <- rbind(sts.smooth, data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys))
 
     if(n.perm==0){
       read.ct <- read.ct + 1
