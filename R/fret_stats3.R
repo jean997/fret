@@ -197,8 +197,8 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     ######################################
     cat("Smoothing..\n")
     ys <- smooth.func(x=dat[[1]], y=sts$stat,xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
-    if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]], "ys"=ys)
-      else sts.smooth <- cbind(sts.smooth, data.frame("pos"=dat[[1]], "ys"=ys))
+    if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys)
+      else sts.smooth <- cbind(sts.smooth, data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys))
 
     if(n.perm==0){
       read.ct <- read.ct + 1
