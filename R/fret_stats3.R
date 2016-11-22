@@ -55,7 +55,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   if(smoother=="ksmooth_0"){
     smooth.func <- function(x, y, xout, bandwidth){ksmooth_0(x, y,xout, bandwidth, stitch=1e5, parallel=parallel)}
   }else if(smoother=="ksmooth"){
-    smooth.func <- function(x, y, bandwidth){ ksmooth(x=x, y=y, x.points=x, bandwidth=bandwidth)$y}
+    smooth.func <- function(x, y, xout, bandwidth){ ksmooth(x=x, y=y, x.points=xout, bandwidth=bandwidth)$y}
   }
 
   stopifnot(length(z0)==length(zmin) | is.null(zmin))
@@ -133,13 +133,15 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     #read data
     goto(df.laf, max(1, (read.ct-1)*chunksize-bandwidth + 1))
     dat <- next_block(df.laf, nrows=chunksize + 2*bandwidth)
-    cat("dat: ", dim(dat), "\n")
+
     if(nrow(dat) < chunksize + 2*bandwidth) done <- TRUE
     if(nrow(dat) <= bandwidth) break
 
     if(read.ct==1) nstart <- 1
       else nstart <- bandwidth + 1
     nend <- min(nrow(dat), nstart + chunksize-1)
+    cat("dat: ", dim(dat), mstart, dat[[1]][nstart], dat[[1]][nend], nend, "\n")
+
     if(!is.null(range)){
       if(dat[[1]][nend] < new.range[1]){
         read.ct <- read.ct + 1
@@ -195,8 +197,8 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     ######################################
     cat("Smoothing..\n")
     ys <- smooth.func(x=dat[[1]], y=sts$stat,xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
-    if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]], "ys"=ys[ix1:ix2])
-      else sts.smooth <- cbind(sts.smooth, data.frame("pos"=dat[[1]], "ys"=ys[ix1:ix2]))
+    if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]], "ys"=ys)
+      else sts.smooth <- cbind(sts.smooth, data.frame("pos"=dat[[1]], "ys"=ys))
 
     if(n.perm==0){
       read.ct <- read.ct + 1
@@ -217,7 +219,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     cat("Smoothing permutation statistics...\n")
     stat.ix <- seq(3, nrow(sts.perm), by=3)
     stats.perm.smooth <- apply(sts.perm[ix,], MARGIN=2, FUN=function(yy){
-      smooth.func(x=pos, y=yy, bandwidth = bandwidth)
+      smooth.func(x=dat[[1]], y=yy, xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
     })
     save(sts.perm.smooth, file=paste0(tdir, "/smooth_stats_", keep.ct, ".RData"))
 
