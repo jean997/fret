@@ -1,4 +1,3 @@
-#'@include LaF
 
 
 #' @title Calculate FRET test statistics

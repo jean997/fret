@@ -1,6 +1,8 @@
 #'@import MASS
 #'@import readr
 #'@import parallel
+#'@import LaF
+
 
 #'@title Calculate Huber test statistics
 #'@description Calculate Huber test statistics with variance inflation constant.

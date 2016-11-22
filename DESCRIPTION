@@ -15,3 +15,16 @@ LinkingTo: Rcpp
 Imports:
     Rcpp
 RoxygenNote: 5.0.1
+Collate:
+    'RcppExports.R'
+    'choose_s0.R'
+    'collect_from_files.R'
+    'find_segments.R'
+    'fret_rates.R'
+    'fret_stats.R'
+    'fret_stats2.R'
+    'fret_stats3.R'
+    'ksmooth_0.R'
+    'maxes_1seg.R'
+    'stats.R'
+    'util.R'
