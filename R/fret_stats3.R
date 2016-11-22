@@ -183,7 +183,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     my.sts$pos <- dat[[1]]
     if(keep.ct ==1 ) sts <- my.sts[nstart:nend,]
       else sts <- rbind(sts, my.sts[nstart:nend,])
-
+    cat(dim(sts), "\n")
     if(smoother=="none"){
       read.ct <- read.ct + 1
       keep.ct <- keep.ct + 1
