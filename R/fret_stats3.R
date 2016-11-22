@@ -140,7 +140,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     if(read.ct==1) nstart <- 1
       else nstart <- bandwidth + 1
     nend <- min(nrow(dat), nstart + chunksize-1)
-    cat("dat: ", dim(dat), mstart, dat[[1]][nstart], dat[[1]][nend], nend, "\n")
+    cat("dat: ", dim(dat), nstart, dat[[1]][nstart], dat[[1]][nend], nend, "\n")
 
     if(!is.null(range)){
       if(dat[[1]][nend] < new.range[1]){
