@@ -133,7 +133,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     #read data
     goto(df.laf, max(0, (read.ct-1)*chunksize-bandwidth))
     dat <- next_block(df.laf, nrows=chunksize + 2*bandwidth)
-
+    cat("dat: ", dim(dat), "\n")
     if(nrow(dat) < chunksize + 2*bandwidth) done <- TRUE
     if(nrow(dat) <= bandwidth) break
 
@@ -183,7 +183,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     my.sts$pos <- dat[[1]]
     if(keep.ct ==1 ) sts <- my.sts[nstart:nend,]
       else sts <- rbind(sts, my.sts[nstart:nend,])
-    cat(dim(sts), "\n")
+
     if(smoother=="none"){
       read.ct <- read.ct + 1
       keep.ct <- keep.ct + 1
