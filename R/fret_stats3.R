@@ -131,7 +131,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   while(!done){
     cat("Chunk ", read.ct, "(", keep.ct, ")\n")
     #read data
-    goto(df.laf, max(0, (read.ct-1)*chunksize-bandwidth))
+    goto(df.laf, max(1, (read.ct-1)*chunksize-bandwidth + 1))
     dat <- next_block(df.laf, nrows=chunksize + 2*bandwidth)
     cat("dat: ", dim(dat), "\n")
     if(nrow(dat) < chunksize + 2*bandwidth) done <- TRUE
