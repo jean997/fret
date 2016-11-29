@@ -70,12 +70,11 @@ ksmooth_0 <- function(x, y, xout, bandwidth, stitch=NULL, parallel=FALSE, cores=
   }
 
   cl <- makeCluster(cores, type="FORK")
-
+  on.exit(stopCluster(cl))
   yout <- unlist(parLapply(cl, 1:N, function(ix){
     ksmooth_0_cpp(x[strts1[ix]:stps1[ix]], y[strts1[ix]:stps1[ix]],
                   xout[strts2[ix]:stps2[ix]], bandwidth)
   }))
-  stopCluster(cl)
   return(yout)
 }
 
