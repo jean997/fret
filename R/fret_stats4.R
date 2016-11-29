@@ -22,15 +22,14 @@
 #' @param stat.type Either "huber" or "lm"
 #' @param maxit Maximum iterations for Huber estimator.
 #' @param out.file Name an output file
-#' @param chrom Name of chromosome to print in output file
+#' @param chrom Name of chromosome
 #'@export
 fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=zmin*0.3,
                         pheno.transformation=NULL, trait=c("x"), covariates=c(),
                         bandwidth=150, smoother=c("ksmooth_0", "ksmooth", "none"),
                         stat.type=c("huber", "lm"), maxit=50, margin=3*bandwidth,
-                        save.perm.stats=FALSE,
                         range=NULL, chunksize=1e5, which.chunks=NULL, temp.prefix=NULL,
-                       out.file=NULL, chrom="chr1", parallel=TRUE, temp.dir ="./"){
+                       chrom="chr1", parallel=TRUE, temp.dir ="./"){
   ############
   #  Options #
   ############
@@ -260,7 +259,8 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     sts.perm.smooth <- apply(sts.perm[stat.ix,], MARGIN=2, FUN=function(yy){
       smooth.func(x=dat[[1]], y=yy, xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
     })
-    if(save.perm.stats) R$sts.perm.smooth <- sts.perm.smooth[nmstart:nmend,]
+    R.temp$perm.var <- data.frame("pos"=dat[[1]][nstart:nend],
+                                  "var"=apply(sts.perm.smooth[nmstart:nmend,], MARGIN=1, FUN=var))
     ###########################################
     # Find permutation peak heights/locations #
     ###########################################

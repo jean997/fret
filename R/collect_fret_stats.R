@@ -20,22 +20,21 @@ collect_fret_stats <- function(temp.dir, temp.prefix){
     k <- k+1
   }
   if("mperm" %in% names(R)){
+    perm.var <- R$perm.var
     mperm <- R$mperm
     k <- k+1
   }
-  if("sts.perm.smooth" %in% nanmes(R)){
-    sts.perm.smooth <- R$sts.perm.smooth
-    permstats <- TRUE
-  }else{
-    permstats <- FALSE
-  }
+
   for(f in fl[-1]){
     cat(fl, "..")
     R <- getobj(f)
     sts <- rbind(sts, R$sts)
     if(k > 1) sts.smooth <- rbind(sts.perm, R$sts.perm)
     if(k > 2) m1 <- rbind(m1, R$m1)
-    if(k > 3) mperm <- rbind(mperm, R$mperm)
+    if(k > 3){
+      perm.var <-rbind(perm.var, R$perm.var)
+      mperm <- rbind(mperm, R$mperm)
+    }
     if(permstats) sts.perm.smooth <- rbind(sts.perm.smooth, R$sts.perm.smooth)
   }
   cat("\n")
