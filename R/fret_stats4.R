@@ -28,8 +28,9 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
                         pheno.transformation=NULL, trait=c("x"), covariates=c(),
                         bandwidth=150, smoother=c("ksmooth_0", "ksmooth", "none"),
                         stat.type=c("huber", "lm"), maxit=50, margin=3*bandwidth,
-                        range=NULL, chunksize=1e5, which.chunks=NULL, temp.prefix=NULL,
-                       chrom="chr1", parallel=TRUE, temp.dir ="./"){
+                        range=NULL, chunksize=1e5, which.chunks=NULL,
+                       temp.prefix=NULL, temp.dir ="./",
+                       chrom="chr1", parallel=TRUE, cores=parallel::detectCores()-1){
   ############
   #  Options #
   ############
@@ -43,18 +44,18 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       rlm(formula, data=data, maxit=maxit)
     }
     if(!parallel) stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
-    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit)}
+    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit, cores=cores)}
   }else if(stat.type=="lm"){
     lm.func <- function(formula, data){
       lm(formula, data=data)
     }
-    stat.func <- function(Y, x, s0){ lm_stats_parallel(Y, x, s0=s0)}
+    stat.func <- function(Y, x, s0){ lm_stats_parallel(Y, x, s0=s0, cores=cores)}
   }
   #smoother type
   smoother <- match.arg(smoother)
   if(smoother=="ksmooth_0"){
     smooth.func <- function(x, y, xout, bandwidth){
-      ksmooth_0(x, y,xout, bandwidth, stitch=floor(chunksize/100), parallel=parallel)
+      ksmooth_0(x, y,xout, bandwidth, stitch=floor(chunksize/100), parallel=parallel, cores=cores)
     }
   }else if(smoother=="ksmooth"){
     smooth.func <- function(x, y, xout, bandwidth){

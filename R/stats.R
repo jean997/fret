@@ -37,11 +37,8 @@ huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=50){
 #'@param maxit Maixum iterations to pass to rlm.
 #'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
 #'@export
-huber_stats_parallel <- function(Y, x, cl=NULL, s0 = 0,  k=1.345, maxit=50){
-  if(is.null(cl)){
-    no_cores <- detectCores()-1
-    cl <- makeCluster(no_cores, type="FORK")
-  }
+huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
+  cl <- makeCluster(cores, type="FORK")
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
     f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit)
     coef <- summary(f)$coefficients
@@ -65,11 +62,10 @@ huber_stats_parallel <- function(Y, x, cl=NULL, s0 = 0,  k=1.345, maxit=50){
 #'@param maxit Maixum iterations to pass to rlm.
 #'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
 #'@export
-lm_stats_parallel <- function(Y, x, cl=NULL, s0 = 0,  k=1.345, maxit=50){
-  if(is.null(cl)){
-    no_cores <- detectCores()-1
-    cl <- makeCluster(no_cores, type="FORK")
-  }
+lm_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
+
+  cl <- makeCluster(cores, type="FORK")
+
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
     f <- lm(y~x)
     coef <- summary(f)$coefficients
