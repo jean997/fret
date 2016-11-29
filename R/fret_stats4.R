@@ -24,12 +24,13 @@
 #' @param out.file Name an output file
 #' @param chrom Name of chromosome to print in output file
 #'@export
-fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=zmin*0.3,
+fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=zmin*0.3,
                         pheno.transformation=NULL, trait=c("x"), covariates=c(),
-                        range=NULL, chunksize=1e5,
-                        bandwidth=50, smoother=c("ksmooth_0", "ksmooth", "none"),
-                        stat.type=c("huber", "lm"), maxit=50,
-                       out.file=NULL, chrom="chr1", parallel=TRUE, tmp.dir ="/tmp/"){
+                        bandwidth=150, smoother=c("ksmooth_0", "ksmooth", "none"),
+                        stat.type=c("huber", "lm"), maxit=50, margin=3*bandwidth,
+                        save.perm.stats=FALSE,
+                        range=NULL, chunksize=1e5, which.chunks=NULL, temp.prefix=NULL,
+                       out.file=NULL, chrom="chr1", parallel=TRUE, temp.dir ="./"){
   ############
   #  Options #
   ############
@@ -44,7 +45,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     }
     if(!parallel) stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
     	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit)}
-  }else if(staty.type=="lm"){
+  }else if(stat.type=="lm"){
     lm.func <- function(formula, data){
       lm(formula, data=data)
     }
@@ -61,19 +62,37 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
       ksmooth(x=x, y=y, x.points=xout, bandwidth=bandwidth)$y
     }
   }
-
+  #Signed or unsigned?
   stopifnot(length(z0)==length(zmin) | is.null(zmin))
   s <- length(zmin)
   stopifnot(s %in% c(0, 1, 2))
   if(!is.null(pheno.transformation)) stopifnot("function" %in% class(pheno.transformation))
+  #Chunks
   chunksize <- floor(chunksize)
+  nl <- as.numeric(strsplit(system(paste0("wc -l ", pheno.file), intern=TRUE), " ")[[1]][1]) -1
+  nchunk <- max(1, ceiling(nl/chunksize))
+  cat(pheno.file, " contains ", nl, " lines. It will be processed it in ", nchunk, " chunks.\n")
+  if(!is.null(which.chunks)){
+    stopifnot(chunksize > 0)
+    if(any(which.chunks) > nchunk) stop("ERROR: Some requested chunks are too large")
+    cat("This job will analyze ", length(which.chunks), " chunks.\n")
+  }else{
+    which.chunks <- 1:nchunk
+  }
+  #Adjust Range
+  if(!is.null(range)){
+    #We need to look at data beyond the specified range to get the smoothing right
+    #And also because some peaks might go outside of the range
+    new.range <- c(range[1]-margin , range[2]+margin)
+    new.range[1] <- max(1, new.range[1])
+  }
 
   #Object to return
   R <- list("pheno.file"=pheno.file, "trait.file"= trait.file,
             "range"=range, "trait"=trait, "covariates"=covariates,
             "pheno.transformation"=pheno.transformation,
             "bandwidth"=bandwidth, "smoother"=smoother,
-            "z0"=z0, "zmin"=zmin)
+            "z0"=z0, "zmin"=zmin, "chrom"=chrom)
 
 
   ####################
@@ -91,7 +110,7 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   }else{
     x <- X[[trait]]
   }
-  #Permuted phenotypes
+  #Permuted trait values
   if(n.perm > 0){
     set.seed(seed)
     perms <- replicate(n=n.perm, expr = {
@@ -102,64 +121,66 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
   ###################
   # Read pheno data #
   ###################
-  h <- readLines(pheno.file, n=1)
-  h <- unlist(strsplit(h, " "))
-
-  #Make sure the trait data is sorted correctly
-  if(!all(h[-1] %in% X[[1]])) stop("Not all of the samples in ", pheno.file, " are in ", trait.file, ".\n")
-  x <- x[match(h[-1], X[[1]])]
-  X <- X[match(h[-1], X[[1]]), ]
-
-  #Use LaF package to read file in chunks
+  #Using the LaF package to read data
   dm <- detect_dm_csv(filename=pheno.file, header=TRUE, sep=" ")
   df.laf <- laf_open(dm)
 
-  nl <- as.numeric(strsplit(system(paste0("wc -l ", pheno.file), intern=TRUE), " ")[[1]][1])
-  nchunk <- ceiling(nl/chunksize)
-  cat(pheno.file, " contains ", nl, " lines. I will process it in ", nchunk, " chunks.\n")
-  #Adjust Range
-  if(!is.null(range)){
-    #We need to look at data beyond the specified range to get the smoothing right
-    #And also because some peaks might go outside of the range
-    new.range <- c(range[1]-3*bandwidth , range[2]+3*bandwidth)
-    new.range[1] <- max(1, new.range[1])
-  }
+  #Make sure the trait data is sorted correctly
+  if(!all(dm$columns$name[-1] %in% X[[1]])) stop("Not all of the samples in ", pheno.file, " are in ", trait.file, ".\n")
+  x <- x[match(dm$columns$name[-1], X[[1]])]
+  X <- X[match(dm$columns$name[-1], X[[1]]), ]
+
+  #For saving as we go so we don't use an absurd amount of memory
+  if(is.null(temp.prefix)) temp.prefix <- paste0(paste0(sample(c(letters, LETTERS), size=4), collapse=""), "_", chrom)
+  tp <- paste0(temp.dir, temp.prefix)
+  cat("temp prefix: ", tp, "\n")
 
   done <- FALSE
-  read.ct <- 1
-  keep.ct <- 1
-  #For saving as we go so we don't use an absurd amount of memory
-  tdir <- paste0(tmp.dir, paste0(sample(c(letters, LETTERS), size=4), collapse=""), "_", chrom)
-  system(paste0("mkdir ", tdir))
-
+  chunk <- 1
   while(!done){
-    cat("Chunk ", read.ct, "(", keep.ct, ")\n")
+    if(!chunk %in% which.chunks){
+      chunk <- chunk + 1
+      next
+    }
+    cat("Chunk ", chunk, "\n")
     #read data
-    goto(df.laf, max(1, (read.ct-1)*chunksize-bandwidth + 1))
-    dat <- next_block(df.laf, nrows=chunksize + 2*bandwidth)
-
-    if(nrow(dat) < chunksize + 2*bandwidth) done <- TRUE
-    if(nrow(dat) <= bandwidth) break
-
-    if(read.ct==1) nstart <- 1
-      else nstart <- bandwidth + 1
-    nend <- min(nrow(dat), nstart + chunksize-1)
-    cat("dat: ", dim(dat), nstart, dat[[1]][nstart], dat[[1]][nend], nend, "\n")
+    if(chunksize < 0){
+      dat <- next_block(df.laf, nrows=nl)
+      done <- TRUE
+      nstart <- 1
+      nend <- nrow(dat)
+    }else{
+      goto(df.laf, max(1, (chunk-1)*chunksize-margin + 1))
+      dat <- next_block(df.laf, nrows=chunksize + 2*margin)
+      if(nrow(dat) < chunksize + 2*margin) done <- TRUE
+      if(nrow(dat) <= margin) break
+      if(chunk==1){
+        nstart <- mstart <- 1
+      }else{
+        nstart <- margin + 1
+        mstart <- ceiling(bandwidth/2)
+      }
+      nmstart <- nstart -mstart + 1
+      nend <- min(nrow(dat), nstart + chunksize-1)
+      mend <- nrow(dat)-ceiling(bandwidth/2)
+      nmend <- nend -mstart  + 1
+    }
 
     if(!is.null(range)){
       if(dat[[1]][nend] < new.range[1]){
-        read.ct <- read.ct + 1
+        chunk <- chunk + 1
         next
       }
       if(dat[[1]][nend] > new.range[2]){
         done <- TRUE
         nend <- which.min(dat[[1]] < new.range[2])
       }
-      if(dat[[1]][nstart] < new.range[1] & dat[[1]][nend] > new.range[1]){
+      if(dat[[1]][nstart] < new.range[1]){
         nstart <- which.max(dat[[1]] >= new.range[1])
       }
     }
-
+    R.temp <- R
+    R.temp$chunk <- chunk
     ###################################
     # Adjust phenotype for covariates #
     ###################################
@@ -183,16 +204,15 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     # Calculate (non-permutation) test statistics #
     ###############################################
     cat("Calculating test statistics..\n")
-    my.sts <- stat.func(Y=dat[, -1], x=x,s0=s0)
-    my.sts <- data.frame(t(my.sts))
-    names(my.sts) <- c("Beta", "SD", "stat")
-    my.sts$pos <- dat[[1]]
-    if(keep.ct ==1 ) sts <- my.sts[nstart:nend,]
-      else sts <- rbind(sts, my.sts[nstart:nend,])
+    R.temp$sts <- stat.func(Y=dat[, -1], x=x,s0=s0)
+    R.temp$sts <- data.frame(t(R.temp$sts))
+    names(R.temp$sts) <- c("Beta", "SD", "stat")
+    R.temp$sts$pos <- dat[[1]]
 
     if(smoother=="none"){
-      read.ct <- read.ct + 1
-      keep.ct <- keep.ct + 1
+      R.temp$sts <- R.temp$sts[nstart:nend, ]
+      save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
+      chunk <- chunk + 1
       next
     }
 
@@ -200,16 +220,31 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     # Smooth (non-permutation) statistics#
     ######################################
     cat("Smoothing..\n")
-    ys <- smooth.func(x=dat[[1]], y=my.sts$stat,xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
-    if(keep.ct == 1) sts.smooth <- data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys)
-      else sts.smooth <- rbind(sts.smooth, data.frame("pos"=dat[[1]][nstart:nend], "ys"=ys))
-
-    if(n.perm==0){
-      read.ct <- read.ct + 1
-      keep.ct <- keep.ct + 1
+    ys <- smooth.func(x=dat[[1]], y=R.temp$sts$stat,xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
+    R.temp$sts.smooth <- data.frame("pos"=dat[[1]][mstart:mend], "ys"=ys)
+    R.temp$sts <- R.temp$sts[nstart:nend, ]
+    if(is.null(zmin)){
+      R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
+      save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
+      chunk <- chunk + 1
       next
     }
-
+    R.temp$m1 <- mxlist(ys, z0, zmin, pos=dat[[1]][mstart:mend])
+    if(!is.null(R.temp$m1)){
+      if(s==1) R.temp$m1 <- R.temp$m1[R.temp$m1$mx >= zmin,]
+        else R.temp$m1 <- R.temp$m1[R.temp$m1$mx >= zmin[2] & R.temp$m1$mx <= zmin[1],]
+      R.temp$m1 <- R.temp$m1[R.temp$m1$pos <= dat[[1]][nend] & R.temp$m1$pos >= dat[[1]][nstart],]
+      if(any(R.temp$m1$ix1==1 | R.temp$m1$ix2 ==(mend-mstart + 1))){
+        cat("Warning: You may need to increase margin to correctly capture peaks.\n")
+      }
+      if(nrow(R.temp$m1)==0) R.temp$m1 <- NULL
+    }
+    R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
+    if(n.perm==0){
+      save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
+      chunk <- chunk + 1
+      next
+    }
     #########################################
     # Calculate permutation test statistics #
     #########################################
@@ -222,74 +257,34 @@ fret_stats3 <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=
     ######################################
     cat("Smoothing permutation statistics...\n")
     stat.ix <- seq(3, nrow(sts.perm), by=3)
-    stats.perm.smooth <- apply(sts.perm[ix,], MARGIN=2, FUN=function(yy){
-      smooth.func(x=dat[[1]], y=yy, xout=dat[[1]][nstart:nend], bandwidth = bandwidth)
+    sts.perm.smooth <- apply(sts.perm[stat.ix,], MARGIN=2, FUN=function(yy){
+      smooth.func(x=dat[[1]], y=yy, xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
     })
-    save(sts.perm.smooth, file=paste0(tdir, "/smooth_stats_", keep.ct, ".RData"))
-
-    read.ct <- read.ct + 1
-    keep.ct <- keep.ct + 1
+    if(save.perm.stats) R$sts.perm.smooth <- sts.perm.smooth[nmstart:nmend,]
+    ###########################################
+    # Find permutation peak heights/locations #
+    ###########################################
+    mperm <- apply(sts.perm.smooth, MARGIN=2, FUN=function(yys){
+      mxlist(yys, R$z0, R$zmin, pos=dat[[1]][mstart:mend])
+    })
+    R.temp$mperm <- do.call(rbind, mperm)
+    if(!is.null(R.temp$mperm)){
+      R.temp$mperm <- R.temp$mperm[R.temp$mperm$pos <= dat[[1]][nend] & R.temp$mperm$pos >= dat[[1]][nstart],]
+      if(any(R.temp$mperm$ix1==1 | R.temp$mperm$ix2 ==(mend-mstart + 1))){
+        cat("Warning: You may need to increase margin to correctly capture peaks.\n")
+      }
+      if(nrow(R.temp$m1)==0) R.temp$m1 <- NULL
+    }
+    save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
+    chunk <- chunk + 1
   }
   rm(dat)
+  close(df.laf)
 
-  R$stats <- sts
-  if(smoother=="none"){
-    if(!is.null(out.file)){
-      save(R, file=out.file)
-      return(NULL)
-    }
+  if(!length(which.chunks)==nchunk){
     return(R)
   }
-
-  R$stats.smooth <- sts.smooth
-  if(is.null(zmin)){
-    if(!is.null(out.file)){
-      save(R, file=out.file)
-      return(NULL)
-    }
-    return(R)
-  }
-
-  #######################################
-  # Find (non-permutation) peak heights #
-  #######################################
-  max1 <- mxlist(sts.smooth$ys, z0, zmin, return.ix = TRUE)
-  if(s==1) max1 <- max1[max1$mx > zmin,] #Unsigned
-    else max1 <- max1[max1$mx > zmin[1] | max1$mx < zmin[2],] #signed
-  #Convert index to position
-  max1$pos <- pos[max1$ix]
-  max1$iv1 <- pos[max1$iv1]
-  max1$iv2 <- pos[max1$iv2]
-  max1$chr <- chrom
-  max1 <- max1[, c("mx", "chr", "pos", "iv1", "iv2")]
-  if(!is.null(range)) max1 <- max1[max1$mx >= range[1] & max1$mx <= range[2],]
-
-  R$max1 <- max1
-  if(n.perm==0){
-    if(!is.null(out.file)){
-      save(R, file=out.file)
-      return(NULL)
-    }
-    return(R)
-  }
-
-  cat("Collecting permutation test stats.\n")
-  sts.perm.smooth <- matrix(nrow=0, ncol=2)
-  for(i in 1:keep.ct-1){
-    ss <- getobj(paste0(tdir, "/smooth_stats_", i, ".RData"))
-    sts.perm.smooth <- rbind(sts.perm.smooth, ss)
-    unlink(paste0(tdir, "/smooth_stats_", i, ".RData"))
-  }
-  R$perm.var <- apply(stats.perm.smooth, MARGIN=1, FUN=var)
-  max.perm <- apply(stats.perm.smooth, MARGIN=2, FUN=function(yys){
-    mxlist(yys, z0, zmin, return.ix = TRUE)
-  })
-  R$max.perm <- do.call(rbind, max.perm)
-
-
-  if(!is.null(out.file)){
-    save(R, file=out.file)
-    return(nrow(max.perm))
-  }
+  cat("Collecting results.\n")
+  R <- collect_fret_stats(temp.dir, temp.prefix)
   return(R)
 }

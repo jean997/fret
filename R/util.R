@@ -38,59 +38,42 @@ excursions <- function(ys, z0){
 }
 
 #'@export
-mxlist <- function(ys, z0, zmin, return.ix = FALSE){
+mxlist <- function(ys, z0, zmin, pos = NULL){
   stopifnot(length(z0)==length(zmin))
   stopifnot(length(z0) %in% c(1, 2))
 
   if(length(z0)==1){
     stopifnot(z0 > 0 & zmin >= z0)
-    if(all(abs(ys) < z0)) return(c())
+    if(all(abs(ys) < z0)) return(NULL)
     #Excursions at z0
     ivls <- excursions(ys, z0)
     #Max stat value inside each excurion
     mxs <- apply(ivls, MARGIN=1, FUN=function(iv){ max(abs(ys)[iv[1]:iv[2]])})
-    #o <- order(abs(mxs), decreasing=FALSE)
-    #mxs <- mxs[o]
-    #n <- length(mxs)
-    #if(sum(abs(mxs) >= zmin) > 5) ii <- which(abs(mxs) >= zmin)
-    #  else ii <- 1:(min(5, n))
-    #mxs <- mxs[ii]
-    if(return.ix){
-      ixs <- apply(ivls, MARGIN=1, FUN=function(iv){
-        (iv[1]:iv[2])[which.max(abs(ys)[iv[1]:iv[2]])]
-        })
-      #ixs <- ixs[o][ii]
-      return(data.frame("mx"=mxs, "ix"=ixs, "iv1"=ivls[,1], "iv2"=ivls[,2]))
-    }
-    return(mxs)
-  }else{
-    stopifnot(z0[1] > 0 & z0[2] < 0)
-    stopifnot(zmin[1] > 0 & zmin[2] < 0)
 
-    if(all(ys < z0[1] & ys > z0[2])) return(c())
-    #Excursions at z0 - positive
-    ivls <- excursions(ys, z0)
-    #Max stat value inside each excurion
-    mxs <- apply(ivls, MARGIN=1, FUN=function(iv){
-      yy <- ys[iv[1]:iv[2]]
-      return(max(abs(yy))*sign(yy[1]))
+    ixs <- apply(ivls, MARGIN=1, FUN=function(iv){
+      (iv[1]:iv[2])[which.max(abs(ys)[iv[1]:iv[2]])]
     })
-    #o <- order(mxs, decreasing=TRUE)
-    #mxs <- mxs[o]
-    #np <- sum(mxs > 0)
-    #nn <- sum(mxs < 0)
-    #if(sum(mxs >=zmin[1]) > 5 & sum(mxs<=zmin[2]) > 5) ii <- which(mxs >=zmin[1]| mxs<=zmin[2])
-    #  else ii <- c(1:(min(5, np)), max((np+nn-4), np+1):(np+nn))
-    #mxs <- mxs[ii]
-    if(return.ix){
-      ixs <- apply(ivls, MARGIN=1, FUN=function(iv){
-        (iv[1]:iv[2])[which.max(abs(ys)[iv[1]:iv[2]])]
-      })
-      #ixs <- ixs[o][ii]
-      return(data.frame("mx"=mxs, "ix"=ixs, "iv1"=ivls[,1], "iv2"=ivls[,2]))
-    }
-    return(mxs)
+    dat <- data.frame("mx"=mxs, "pos"=pos[ixs], "start"=pos[ivls[,1]], "stop"=pos[ivls[,2]],
+                      "ix1"=ivls[,1], "ix2"=ivls[,2])
+    return(dat)
   }
+  #Signed
+  stopifnot(z0[1] > 0 & z0[2] < 0)
+  stopifnot(zmin[1] > 0 & zmin[2] < 0)
+  if(all(ys < z0[1] & ys > z0[2])) return(NULL)
+  #Excursions at z0
+  ivls <- excursions(ys, z0)
+  #Max stat value inside each excurion
+  mxs <- apply(ivls, MARGIN=1, FUN=function(iv){
+    yy <- ys[iv[1]:iv[2]]
+    return(max(abs(yy))*sign(yy[1]))
+  })
+  ixs <- apply(ivls, MARGIN=1, FUN=function(iv){
+    (iv[1]:iv[2])[which.max(abs(ys)[iv[1]:iv[2]])]
+  })
+  dat <- data.frame("mx"=mxs, "pos"=pos[ixs], "start"=pos[ivls[,1]], "stop"=pos[ivls[,2]],
+                      "ix1"=ivls[,1], "ix2"=ivls[,2])
+  return(dat)
 }
 
 #'@export
