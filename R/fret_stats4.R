@@ -274,7 +274,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       if(any(R.temp$mperm$ix1==1 | R.temp$mperm$ix2 ==(mend-mstart + 1))){
         cat("Warning: You may need to increase margin to correctly capture peaks.\n")
       }
-      if(nrow(R.temp$m1)==0) R.temp$m1 <- NULL
+      if(nrow(R.temp$mperm)==0) R.temp$mperm <- NULL
     }
     save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
     chunk <- chunk + 1
