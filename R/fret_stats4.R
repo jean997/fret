@@ -245,20 +245,14 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       chunk <- chunk + 1
       next
     }
-    #########################################
-    # Calculate permutation test statistics #
-    #########################################
+
+    ###############################
+    # Permutation test statistics #
+    ###############################
     cat("Calculating permutation statistics...\n")
-    sts.perm <- apply(perms, MARGIN=2, FUN=function(l){
-      stat.func(dat[,-1], x=l, s0=s0)
-    })
-    ######################################
-    # Smooth permutation test statistics #
-    ######################################
-    cat("Smoothing permutation statistics...\n")
-    stat.ix <- seq(3, nrow(sts.perm), by=3)
-    sts.perm.smooth <- apply(sts.perm[stat.ix,], MARGIN=2, FUN=function(yy){
-      smooth.func(x=dat[[1]], y=yy, xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
+    sts.perm.smooth <- apply(perms, MARGIN=2, FUN=function(l){
+      sts <- stat.func(dat[,-1], x=l, s0=s0)
+      smooth.func(x=dat[[1]], y=sts[,3], xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
     })
     R.temp$perm.var <- data.frame("pos"=dat[[1]][nstart:nend],
                                   "var"=apply(sts.perm.smooth[nmstart:nmend,], MARGIN=1, FUN=var))
