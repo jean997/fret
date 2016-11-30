@@ -8,9 +8,9 @@ fret_stats(pheno.file, trait.file, s0, seed, n.perm, zmin = NULL, z0 = zmin
   * 0.3, pheno.transformation = NULL, trait = c("x"), covariates = c(),
   bandwidth = 150, smoother = c("ksmooth_0", "ksmooth", "none"),
   stat.type = c("huber", "lm"), maxit = 50, margin = 3 * bandwidth,
-  save.perm.stats = FALSE, range = NULL, chunksize = 1e+05,
-  which.chunks = NULL, temp.prefix = NULL, out.file = NULL,
-  chrom = "chr1", parallel = TRUE, temp.dir = "./")
+  range = NULL, chunksize = 1e+05, which.chunks = NULL,
+  temp.prefix = NULL, temp.dir = "./", chrom = "chr1", parallel = TRUE,
+  cores = parallel::detectCores() - 1)
 }
 \arguments{
 \item{pheno.file}{File containing genomic phenotype}
@@ -40,18 +40,18 @@ If n.perm=0, only test statistics for unpermuted data will be calculated}
 
 \item{maxit}{Maximum iterations for Huber estimator.}
 
-\item{save.perm.stats}{Should the permutation test statistics be saved?}
-
 \item{range}{Base-pair range. If missing, stats for the whole file will be calculated}
 
 \item{chunksize}{Size of chunks to read at one time}
 
-\item{out.file}{Name an output file}
+\item{chrom}{Name of chromosome}
 
-\item{chrom}{Name of chromosome to print in output file}
+\item{save.perm.stats}{Should the permutation test statistics be saved?}
 
 \item{smooother}{Either "ksmooth_0" or "ksmooth". The ksmooth_0 smoother treats base-pairs
 with no data as though the phenotype at that position is equal to zero for all samples (appropriate for DNase-seq data).
 The ksmooth smoother treats these base-pairs as missing (appropriate for bisulfite sequencing data).}
+
+\item{out.file}{Name an output file}
 }
 

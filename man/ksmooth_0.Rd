@@ -5,7 +5,7 @@
 \title{Kernel smoother assuming missing positions are 0}
 \usage{
 ksmooth_0(x, y, xout, bandwidth, stitch = NULL, parallel = FALSE,
-  cl = NULL)
+  cores = parallel::detectCores() - 1)
 }
 \arguments{
 \item{x}{Vector of positions}

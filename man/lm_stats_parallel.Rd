@@ -4,7 +4,8 @@
 \alias{lm_stats_parallel}
 \title{Calculate OLS test statistics using parallel package}
 \usage{
-lm_stats_parallel(Y, x, cl = NULL, s0 = 0, k = 1.345, maxit = 50)
+lm_stats_parallel(Y, x, cores = parallel::detectCores() - 1, s0 = 0,
+  k = 1.345, maxit = 50)
 }
 \arguments{
 \item{Y}{matrix (p x n)}
