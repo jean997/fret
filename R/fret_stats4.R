@@ -250,25 +250,23 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     # Permutation test statistics #
     ###############################
     cat("Calculating permutation statistics...\n")
-    sts.perm.smooth <- apply(perms, MARGIN=2, FUN=function(l){
-      sts <- stat.func(dat[,-1], x=l, s0=s0)
-      smooth.func(x=dat[[1]], y=sts[,3], xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
-    })
-    R.temp$perm.var <- data.frame("pos"=dat[[1]][nstart:nend],
-                                  "var"=apply(sts.perm.smooth[nmstart:nmend,], MARGIN=1, FUN=var))
-    ###########################################
-    # Find permutation peak heights/locations #
-    ###########################################
-    mperm <- apply(sts.perm.smooth, MARGIN=2, FUN=function(yys){
-      mxlist(yys, R$z0, R$zmin, pos=dat[[1]][mstart:mend])
-    })
-    R.temp$mperm <- do.call(rbind, mperm)
-    if(!is.null(R.temp$mperm)){
-      R.temp$mperm <- R.temp$mperm[R.temp$mperm$pos <= dat[[1]][nend] & R.temp$mperm$pos >= dat[[1]][nstart],]
-      if(any(R.temp$mperm$ix1==1 | R.temp$mperm$ix2 ==(mend-mstart + 1))){
-        cat("Warning: You may need to increase margin to correctly capture peaks.\n")
-      }
-      if(nrow(R.temp$mperm)==0) R.temp$mperm <- NULL
+    NN <- nend-nstart + 1
+    sum_stat_sq <- rep(0, N)
+    sum_stat <- rep(0, N)
+    R.temp$mperm <- data.frame(matrix(nrow=0, ncol=6))
+    names(R.temp$mperm) <- c("mx", "pos", "start", "stop", "ix1", "ix2")
+    for(i in 1:n.perm){
+      sts <- stat.func(dat[,-1], x=perms[,i], s0=s0)
+      sm.sts <- smooth.func(x=dat[[1]], y=sts[,3], xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
+      sum_stat_sq <- sum_stat_sq + sm.sts[nmstart:nmend]^2
+      sum_stat <- sum_stat + sm.sts[nmstart:nmend]
+      R.temp$mperm <- rbind(R.temp$mperm, mxlist(sm.sts, z0, zmin, pos=dat[[1]][mstart:mend]))
+    }
+    R$perm.var <- (sum_stat_sq/(n.perm-1)) - (sum_stat^2)/(n.perm*(n.perm-1))
+
+    R.temp$mperm <- R.temp$mperm[R.temp$mperm$pos <= dat[[1]][nend] & R.temp$mperm$pos >= dat[[1]][nstart],]
+    if(any(R.temp$mperm$ix1==1 | R.temp$mperm$ix2 ==(mend-mstart + 1))){
+      cat("Warning: You may need to increase margin to correctly capture peaks.\n")
     }
     save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
     chunk <- chunk + 1
