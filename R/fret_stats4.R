@@ -259,7 +259,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     # Permutation test statistics #
     ###############################
     cat("Calculating permutation statistics...\n")
-    NN <- nend-nstart + 1
+    N <- nend-nstart + 1
     sum_stat_sq <- rep(0, N)
     sum_stat <- rep(0, N)
     R.temp$mperm <- data.frame(matrix(nrow=0, ncol=6))
