@@ -1,5 +1,4 @@
 #'@import MASS
-#'@import readr
 #'@import parallel
 #'@import LaF
 

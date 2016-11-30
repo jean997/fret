@@ -36,7 +36,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   ############
   if(length(trait) !=1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
   if(is.null(zmin)) stopifnot(n.perm==0)
-  if(smoother=="none") stopifnot(n.perm==0)
+
   #stat type
   stat.type <- match.arg(stat.type)
   if(stat.type=="huber"){
@@ -53,6 +53,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   }
   #smoother type
   smoother <- match.arg(smoother)
+  if(smoother=="none") stopifnot(n.perm==0)
   if(smoother=="ksmooth_0"){
     smooth.func <- function(x, y, xout, bandwidth){
       ksmooth_0(x, y,xout, bandwidth, stitch=floor(chunksize/100), parallel=parallel, cores=cores)
@@ -69,12 +70,13 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   if(!is.null(pheno.transformation)) stopifnot("function" %in% class(pheno.transformation))
   #Chunks
   chunksize <- floor(chunksize)
-  nl <- as.numeric(strsplit(system(paste0("wc -l ", pheno.file), intern=TRUE), " ")[[1]][1]) -1
+  #nl <- as.numeric(strsplit(system(paste0("wc -l ", pheno.file), intern=TRUE), " ")[[1]][1]) -1
+  nl <- determine_nlines(pheno.file)-1
   nchunk <- max(1, ceiling(nl/chunksize))
   cat(pheno.file, " contains ", nl, " lines. It will be processed it in ", nchunk, " chunks.\n")
   if(!is.null(which.chunks)){
     stopifnot(chunksize > 0)
-    if(any(which.chunks) > nchunk) stop("ERROR: Some requested chunks are too large")
+    if(any(which.chunks > nchunk)) stop("ERROR: Some requested chunks are too large")
     cat("This job will analyze ", length(which.chunks), " chunks.\n")
   }else{
     which.chunks <- 1:nchunk
@@ -98,7 +100,10 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   ####################
   #  Read trait data #
   ####################
-  X <- readr::read_delim(trait.file, delim=" ")
+  dm <- detect_dm_csv(filename=trait.file, header=TRUE, sep=" ")
+  df.laf <- laf_open(dm)
+  X <- df.laf[,]
+  close(df.laf)
   if(!all(trait %in% names(X))) stop("ERROR: I didn't find colunns matching the specified trait name in the phenotype file.\n")
   if(!all(covariates %in% names(X))) stop("ERROR: I didn't find colunns matching the specified covariates in the phenotype file.\n")
   n <- nrow(X)
@@ -138,6 +143,10 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   done <- FALSE
   chunk <- 1
   while(!done){
+    if(chunk > max(which.chunks)){
+      done <- TRUE
+      break
+    }
     if(!chunk %in% which.chunks){
       chunk <- chunk + 1
       next
@@ -256,19 +265,24 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     R.temp$mperm <- data.frame(matrix(nrow=0, ncol=6))
     names(R.temp$mperm) <- c("mx", "pos", "start", "stop", "ix1", "ix2")
     for(i in 1:n.perm){
+      cat(i, " ")
       sts <- stat.func(dat[,-1], x=perms[,i], s0=s0)
-      sm.sts <- smooth.func(x=dat[[1]], y=sts[,3], xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
+      sm.sts <- smooth.func(x=dat[[1]], y=sts[3,], xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
       sum_stat_sq <- sum_stat_sq + sm.sts[nmstart:nmend]^2
       sum_stat <- sum_stat + sm.sts[nmstart:nmend]
       R.temp$mperm <- rbind(R.temp$mperm, mxlist(sm.sts, z0, zmin, pos=dat[[1]][mstart:mend]))
     }
-    R$perm.var <- (sum_stat_sq/(n.perm-1)) - (sum_stat^2)/(n.perm*(n.perm-1))
+    cat("\n")
+    R.temp$perm.var <- data.frame("pos"=dat[[1]][nstart:nend],
+                                  "var"=(sum_stat_sq/(n.perm-1)) - (sum_stat^2)/(n.perm*(n.perm-1)))
 
     R.temp$mperm <- R.temp$mperm[R.temp$mperm$pos <= dat[[1]][nend] & R.temp$mperm$pos >= dat[[1]][nstart],]
     if(any(R.temp$mperm$ix1==1 | R.temp$mperm$ix2 ==(mend-mstart + 1))){
       cat("Warning: You may need to increase margin to correctly capture peaks.\n")
     }
+    cat("Saving..")
     save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
+    cat("Saved.\n")
     chunk <- chunk + 1
   }
   rm(dat)
