@@ -37,7 +37,7 @@ huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=50){
 #'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
 #'@export
 huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
-  cl <- makeCluster(cores, type="PSOCK")
+  cl <- makeCluster(cores, type="FORK")
   on.exit(stopCluster(cl))
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
     f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit)
@@ -63,7 +63,7 @@ huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0, 
 #'@export
 lm_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
 
-  cl <- makeCluster(cores, type="PSOCK")
+  cl <- makeCluster(cores, type="FORK")
   on.exit(stopCluster(cl))
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
     f <- lm(y~x)
