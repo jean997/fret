@@ -106,7 +106,6 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   close(df.laf)
   if(!all(trait %in% names(X))) stop("ERROR: I didn't find colunns matching the specified trait name in the phenotype file.\n")
   if(!all(covariates %in% names(X))) stop("ERROR: I didn't find colunns matching the specified covariates in the phenotype file.\n")
-  n <- nrow(X)
   #Adjust trait for covariates
   if(length(covariates) > 0){
     ff <- as.formula(paste0(trait, "~", paste0(covariates, collapse="+")))
@@ -114,13 +113,6 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     x <- fitx$residuals
   }else{
     x <- X[[trait]]
-  }
-  #Permuted trait values
-  if(n.perm > 0){
-    set.seed(seed)
-    perms <- replicate(n=n.perm, expr = {
-      sample(x, size=n, replace=FALSE)
-    })
   }
 
   ###################
@@ -134,7 +126,14 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   if(!all(dm$columns$name[-1] %in% X[[1]])) stop("Not all of the samples in ", pheno.file, " are in ", trait.file, ".\n")
   x <- x[match(dm$columns$name[-1], X[[1]])]
   X <- X[match(dm$columns$name[-1], X[[1]]), ]
-
+  n <- nrow(X)
+  #Permuted trait values
+  if(n.perm > 0){
+    set.seed(seed)
+    perms <- replicate(n=n.perm, expr = {
+      sample(x, size=n, replace=FALSE)
+    })
+  }
   #For saving as we go so we don't use an absurd amount of memory
   if(is.null(temp.prefix)) temp.prefix <- paste0(paste0(sample(c(letters, LETTERS), size=4), collapse=""), "_", chrom)
   tp <- paste0(temp.dir, temp.prefix)
