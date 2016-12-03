@@ -37,6 +37,13 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   if(length(trait) !=1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
   if(is.null(zmin)) stopifnot(n.perm==0)
 
+  #Cluster
+  if(parallel){
+    cl <- makeCluster(cores, type="FORK")
+    on.exit(stopCluster(cl))
+  }else{
+    cl <- NULL
+  }
   #stat type
   stat.type <- match.arg(stat.type)
   if(stat.type=="huber"){
@@ -44,19 +51,19 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       rlm(formula, data=data, maxit=maxit)
     }
     if(!parallel) stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
-    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit, cores=cores)}
+    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit, cl=cl)}
   }else if(stat.type=="lm"){
     lm.func <- function(formula, data){
       lm(formula, data=data)
     }
-    stat.func <- function(Y, x, s0){ lm_stats_parallel(Y, x, s0=s0, cores=cores)}
+    stat.func <- function(Y, x, s0){ lm_stats_parallel(Y, x, s0=s0, cl=cl)}
   }
   #smoother type
   smoother <- match.arg(smoother)
   if(smoother=="none") stopifnot(n.perm==0)
   if(smoother=="ksmooth_0"){
     smooth.func <- function(x, y, xout, bandwidth){
-      ksmooth_0(x, y,xout, bandwidth, stitch=floor(chunksize/100), parallel=parallel, cores=cores)
+      ksmooth_0(x, y,xout, bandwidth, stitch=floor(chunksize/100), parallel=parallel, cl=cl)
     }
   }else if(smoother=="ksmooth"){
     smooth.func <- function(x, y, xout, bandwidth){

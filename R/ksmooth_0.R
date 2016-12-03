@@ -35,7 +35,7 @@ ksmooth_0_old <- function(x, y, xout, bandwidth){
 #'@param maxit Maixum iterations to pass to rlm.
 #'@return 2 by p matrix. Top row is coefficient estimate. Bottom row is sd estimates.
 #'@export
-ksmooth_0 <- function(x, y, xout, bandwidth, stitch=NULL, parallel=FALSE, cores=parallel::detectCores()-1){
+ksmooth_0 <- function(x, y, xout, bandwidth, stitch=NULL, parallel=FALSE, cl=NULL, cores=parallel::detectCores()-1){
   stopifnot(length(x)==length(y))
   if(!all(floor(x)==x) | !all(floor(xout)==xout)) stop("ksmooth_0 should only be used with integer positions\n")
   if(!floor(bandwidth)==bandwidth) stop("Please use integer bandwidth with ksmooth_0")
@@ -69,8 +69,10 @@ ksmooth_0 <- function(x, y, xout, bandwidth, stitch=NULL, parallel=FALSE, cores=
     return(yout)
   }
 
-  cl <- makeCluster(cores, type="FORK")
-  on.exit(stopCluster(cl))
+  if(is.null(cl)){
+    cl <- makeCluster(cores, type="FORK")
+    on.exit(stopCluster(cl))
+  }
   yout <- unlist(parLapply(cl, 1:N, function(ix){
     ksmooth_0_cpp(x[strts1[ix]:stps1[ix]], y[strts1[ix]:stps1[ix]],
                   xout[strts2[ix]:stps2[ix]], bandwidth)
