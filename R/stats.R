@@ -38,7 +38,7 @@ huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=50){
 #'@export
 huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
   cl <- makeCluster(cores, type="FORK")
-  on.exit(stopCluster(cl))
+  on.exit(jeanStop(cl, cores))
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
     f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit)
     coef <- summary(f)$coefficients
@@ -64,7 +64,7 @@ huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0, 
 lm_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
 
   cl <- makeCluster(cores, type="FORK")
-  on.exit(stopCluster(cl))
+  on.exit(jeanStop(cl, cores))
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
     f <- lm(y~x)
     coef <- summary(f)$coefficients
