@@ -26,10 +26,10 @@ collect_fret_stats <- function(temp.dir, temp.prefix){
   }
 
   for(f in fl[-1]){
-    cat(fl, "..")
+    cat(f, "..")
     R <- getobj(f)
     sts <- rbind(sts, R$sts)
-    if(k > 1) sts.smooth <- rbind(sts.perm, R$sts.perm)
+    if(k > 1) sts.smooth <- rbind(sts.smooth, R$sts.smooth)
     if(k > 2) m1 <- rbind(m1, R$m1)
     if(k > 3){
       perm.var <-rbind(perm.var, R$perm.var)
