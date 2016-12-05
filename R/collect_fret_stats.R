@@ -1,5 +1,5 @@
 collect_fret_stats <- function(temp.dir, temp.prefix){
-  fl <- list.files(temp.dir, pattern = temp.prefix)
+  fl <- list.files(temp.dir, pattern = temp.prefix, full.names = TRUE)
   n <- length(fl)
   stopifnot(n > 0)
   cat(n, " files to collect.\n")
