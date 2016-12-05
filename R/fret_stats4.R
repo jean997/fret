@@ -29,8 +29,8 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
                         bandwidth=150, smoother=c("ksmooth_0", "ksmooth", "none"),
                         stat.type=c("huber", "lm"), maxit=50, margin=5*bandwidth,
                         range=NULL, chunksize=1e5, which.chunks=NULL,
-                       temp.prefix=NULL, temp.dir ="./",
-                       chrom="chr1", parallel=TRUE, cores=parallel::detectCores()-1){
+                        temp.prefix=NULL, temp.dir ="./", chrom="chr1",
+                        parallel=TRUE, cores=parallel::detectCores()-1, digits=Inf){
   ############
   #  Options #
   ############
@@ -51,7 +51,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       rlm(formula, data=data, maxit=maxit)
     }
     if(!parallel) stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
-    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit, cl=cl)}
+    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit, cl=cl, digits=digits)}
   }else if(stat.type=="lm"){
     lm.func <- function(formula, data){
       lm(formula, data=data)
