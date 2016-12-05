@@ -2,6 +2,7 @@
 
 export(choose_s0)
 export(choose_zmin)
+export(collect_fret_stats)
 export(excursions)
 export(find_segments)
 export(fret_rates)

@@ -7,10 +7,10 @@
 fret_stats(pheno.file, trait.file, s0, seed, n.perm, zmin = NULL, z0 = zmin
   * 0.3, pheno.transformation = NULL, trait = c("x"), covariates = c(),
   bandwidth = 150, smoother = c("ksmooth_0", "ksmooth", "none"),
-  stat.type = c("huber", "lm"), maxit = 50, margin = 3 * bandwidth,
+  stat.type = c("huber", "lm"), maxit = 50, margin = 5 * bandwidth,
   range = NULL, chunksize = 1e+05, which.chunks = NULL,
   temp.prefix = NULL, temp.dir = "./", chrom = "chr1", parallel = TRUE,
-  cores = parallel::detectCores() - 1)
+  cores = parallel::detectCores() - 1, digits = Inf)
 }
 \arguments{
 \item{pheno.file}{File containing genomic phenotype}
