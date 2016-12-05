@@ -237,23 +237,22 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     cat("Smoothing..\n")
     ys <- smooth.func(x=dat[[1]], y=R.temp$sts$stat,xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
     R.temp$sts.smooth <- data.frame("pos"=dat[[1]][mstart:mend], "ys"=ys)
-    R.temp$sts <- R.temp$sts[nstart:nend, ]
+    #Jean - temporary comments here##
+    #R.temp$sts <- R.temp$sts[nstart:nend, ]
     if(is.null(zmin)){
-      R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
+      #R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
       save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
       chunk <- chunk + 1
       next
     }
     R.temp$m1 <- mxlist(ys, z0, zmin, pos=dat[[1]][mstart:mend])
-    if(!is.null(R.temp$m1)){
-      if(s==1) R.temp$m1 <- R.temp$m1[R.temp$m1$mx >= zmin,]
-        else R.temp$m1 <- R.temp$m1[R.temp$m1$mx >= zmin[2] & R.temp$m1$mx <= zmin[1],]
-      R.temp$m1 <- R.temp$m1[R.temp$m1$pos <= dat[[1]][nend] & R.temp$m1$pos >= dat[[1]][nstart],]
-      if(any(R.temp$m1$ix1==1 | R.temp$m1$ix2 ==(mend-mstart + 1))){
-        cat("Warning: You may need to increase margin to correctly capture peaks.\n")
-      }
-      if(nrow(R.temp$m1)==0) R.temp$m1 <- NULL
+    if(s==1) R.temp$m1 <- R.temp$m1[R.temp$m1$mx >= zmin,]
+    	else R.temp$m1 <- R.temp$m1[R.temp$m1$mx >= zmin[2] & R.temp$m1$mx <= zmin[1],]
+    R.temp$m1 <- R.temp$m1[R.temp$m1$pos <= dat[[1]][nend] & R.temp$m1$pos >= dat[[1]][nstart],]
+    if(any(R.temp$m1$ix1==1 | R.temp$m1$ix2 ==(mend-mstart + 1))){
+    	cat("Warning: You may need to increase margin to correctly capture peaks.\n")
     }
+
     R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
     if(n.perm==0){
       save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
