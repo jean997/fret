@@ -1,12 +1,12 @@
-collect_fret_stats <- function(temp.dir, temp.prefix){
-  fl <- list.files(temp.dir, pattern = temp.prefix, full.names = TRUE)
+#'@export
+collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk,
+                               out.file=NULL, del.temp=FALSE){
+  fl_exist <- list.files(temp.dir, pattern = temp.prefix)
+  fl <- paste0(temp.dir, temp.prefix, ".", which.chunk, ".RData")
+  stopifnot(all(fl %in% fl_exist))
   n <- length(fl)
   stopifnot(n > 0)
   cat(n, " files to collect.\n")
-
-  chunks <- as.numeric(strsplit_helper(fl, ".", 2, fixed=TRUE))
-  o <- order(chunks, decreasing = FALSE)
-  fl <- fl[o]
 
   R <- getobj(fl[1])
   sts <- R$sts
@@ -41,5 +41,9 @@ collect_fret_stats <- function(temp.dir, temp.prefix){
   if(k > 1) R$sts.smooth <- sts.smooth
   if(k > 2) R$m1 <- m1
   if(k > 3) R$mperm <- mperm
-  return(R)
+  if(is.null(out.file)) return(R)
+  save(R, file=out.file)
+  if(del.temp){
+    for(f in fl) unlink(f)
+  }
 }
