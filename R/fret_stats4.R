@@ -27,7 +27,7 @@
 fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=zmin*0.3,
                         pheno.transformation=NULL, trait=c("x"), covariates=c(),
                         bandwidth=150, smoother=c("ksmooth_0", "ksmooth", "none"),
-                        stat.type=c("huber", "lm"), maxit=50, margin=3*bandwidth,
+                        stat.type=c("huber", "lm"), maxit=50, margin=5*bandwidth,
                         range=NULL, chunksize=1e5, which.chunks=NULL,
                        temp.prefix=NULL, temp.dir ="./",
                        chrom="chr1", parallel=TRUE, cores=parallel::detectCores()-1){
@@ -100,7 +100,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   R <- list("pheno.file"=pheno.file, "trait.file"= trait.file,
             "range"=range, "trait"=trait, "covariates"=covariates,
             "pheno.transformation"=pheno.transformation,
-            "bandwidth"=bandwidth, "smoother"=smoother,
+            "bandwidth"=bandwidth, "smoother"=smoother, "s0"=s0,
             "z0"=z0, "zmin"=zmin, "chrom"=chrom)
 
 
@@ -237,10 +237,9 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     cat("Smoothing..\n")
     ys <- smooth.func(x=dat[[1]], y=R.temp$sts$stat,xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
     R.temp$sts.smooth <- data.frame("pos"=dat[[1]][mstart:mend], "ys"=ys)
-    #Jean - temporary comments here##
-    #R.temp$sts <- R.temp$sts[nstart:nend, ]
+    R.temp$sts <- R.temp$sts[nstart:nend, ]
     if(is.null(zmin)){
-      #R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
+      R.temp$sts.smooth <- R.temp$sts.smooth[nmstart:nmend,]
       save(R.temp, file=paste0(tp, ".", chunk, ".RData"))
       chunk <- chunk + 1
       next
