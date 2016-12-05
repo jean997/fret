@@ -35,13 +35,11 @@ collect_fret_stats <- function(temp.dir, temp.prefix){
       perm.var <-rbind(perm.var, R$perm.var)
       mperm <- rbind(mperm, R$mperm)
     }
-    if(permstats) sts.perm.smooth <- rbind(sts.perm.smooth, R$sts.perm.smooth)
   }
   cat("\n")
   R$sts <- sts
   if(k > 1) R$sts.smooth <- sts.smooth
   if(k > 2) R$m1 <- m1
   if(k > 3) R$mperm <- mperm
-  if(permstats) R$sts.perm.smooth <- sts.perm.smooth
   return(R)
 }
