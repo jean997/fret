@@ -40,7 +40,10 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk,
   R$sts <- sts
   if(k > 1) R$sts.smooth <- sts.smooth
   if(k > 2) R$m1 <- m1
-  if(k > 3) R$mperm <- mperm
+  if(k > 3){
+    R$mperm <- mperm
+    R$perm.var <- perm.var
+  }
   if(is.null(out.file)) return(R)
   save(R, file=out.file)
   if(del.temp){
