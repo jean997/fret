@@ -1,8 +1,8 @@
 #'@export
 collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk,
                                out.file=NULL, del.temp=FALSE){
-  fl_exist <- list.files(temp.dir, pattern = temp.prefix)
-  fl <- paste0(temp.dir, temp.prefix, ".", which.chunk, ".RData")
+  fl_exist <- list.files(temp.dir, pattern = temp.prefix, full.names = TRUE)
+  fl <- paste0(temp.dir,"/", temp.prefix, ".", which.chunk, ".RData")
   stopifnot(all(fl %in% fl_exist))
   n <- length(fl)
   stopifnot(n > 0)
