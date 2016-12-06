@@ -177,7 +177,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       }
       nmstart <- nstart -mstart + 1
       nend <- min(nrow(dat), nstart + chunksize-1)
-      mend <- nrow(dat)-ceiling(bandwidth/2)
+      mend <- max(nend, nrow(dat)-ceiling(bandwidth/2))
       nmend <- nend -mstart  + 1
     }
 
