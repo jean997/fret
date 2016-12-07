@@ -48,7 +48,7 @@ find_segments <- function(vv, pos, min.length, q=0.05){
       if(all(bp[,2] <= strts[i])){
         stps[i] <- pos[p]
       }else{
-        ix <- min(which(bp[,1]) >= min.end)
+        ix <- min(which(bp[,1] >= min.end))
         stps[i] <- bp[ix,2]-1
       }
     }
