@@ -20,14 +20,14 @@ fret_rates <- function(file.list, fdr.max=0.8){
   max1 <- R$m1
   max.perm <- R$mperm
   zmin <- R$zmin
-  segment.bounds <- R$segment.bounds
+  segment.bounds <- R$seg.bounds
   file.list <- file.list[-1]
   for(f in file.list){
     R <- getobj(f)
     stopifnot(R$zmin==zmin)
     max1 <- rbind(max1, R$m1)
     max.perm <- rbind(max.perm, R$mperm)
-    segment.bounds <- rbind(segment.bounds, R$segment.bounds)
+    segment.bounds <- rbind(segment.bounds, R$seg.bounds)
   }
 
 
