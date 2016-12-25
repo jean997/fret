@@ -13,11 +13,27 @@
 #'@param target.fdr Target fdr values (vector)
 #' @return A list with items z, Robs, and fdr.
 #'@export
-fret_rates <- function(max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8){
+fret_rates <- function(file.list, fdr.max=0.8){
+  #max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8){
+  #Get info from files
+  R <- getobj(file.list[1])
+  max1 <- R$m1
+  max.perm <- R$mperm
+  zmin <- R$zmin
+  segment.bounds <- R$segment.bounds
+  file.list <- file.list[-1]
+  for(f in file.list){
+    R <- getobj(f)
+    stopifnot(R$zmin==zmin)
+    max1 <- rbind(max1, R$m1)
+    max.perm <- rbind(max.perm, R$mperm)
+    segment.bounds <- rbind(segment.bounds, R$segment.bounds)
+  }
+
 
   #Check inputs
   stopifnot(ncol(segment.bounds)==3)
-  stopifnot(names(segment.bounds)==c("chrom", "start", "stop"))
+  stopifnot(names(segment.bounds)==c("chr", "start", "stop"))
   s <- length(zmin)
   stopifnot(s %in% c(1, 2))
 
