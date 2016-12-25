@@ -32,7 +32,7 @@ find_segments <- function(vv, pos, min.length, q=0.05){
   stps <- c()
   i <- 1
   n <- 1
-  while(max(stps) < pos[p]){
+  while(max(stps, warn=FALSE) < pos[p]){
     min.end <- strts[i] + min.length-1
     if(any(strts[i] <= bp[,1] & min.end >= bp[,1])){
       #Interval contains high variance regions
