@@ -99,7 +99,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   #Object to return
   R <- list("pheno.file"=pheno.file, "trait.file"= trait.file,
             "range"=range, "trait"=trait, "covariates"=covariates,
-            "pheno.transformation"=pheno.transformation,
+            "pheno.transformation"=pheno.transformation, "n.perm"=n.perm,
             "bandwidth"=bandwidth, "smoother"=smoother, "s0"=s0,
             "z0"=z0, "zmin"=zmin, "chrom"=chrom)
 
