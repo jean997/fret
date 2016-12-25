@@ -117,47 +117,44 @@ fret_rates <- function(file.list, fdr.max=0.8){
               "max.perm"=max.perm, "nbp"=nbp, "zmin"=zmin))
 }
 
+#'@title Get thresholds for a target FDR level
+#'@param obj Object produced by fret_rates
+#'@param target.fdr trget fdr level
+#'@param stats.files Two column matrix.
+#'The first column is chromosome. The second column is the corresponding stats file.
+#' @return An object that can be passed to fret_thresholds
 #'@export
-fret_thresholds <- function(obj, target.fdr){
+fret_thresholds <- function(obj, target.fdr, stats.files){
 
-  if(any(target.fdr < min(obj$max1$fdr))) cat("Warining: The smallest possible FDR is",
+  stopifnot(ncol(stats.files)==2)
+  chrs <- unique(obj$max1$chr)
+  stopifnot(all(chrs %in% stats.files[,1]))
+  stopifnot(length(target.fdr)==1)
+  if(target.fdr < min(obj$max1$fdr)) stop("The smallest possible FDR is",
                                               min(obj$max1$fdr),  ".\n")
-  target.fdr <- target.fdr[target.fdr >= min(obj$max1$fdr)]
 
-  segnames <- paste0("segment", 1:ncol(obj$max.lambda.pb))
   K <- dim(obj$max.lambda.pb)[2]
   s <- dim(obj$max.lambda.pb)[1]
-  n <- length(target.fdr)
-  Robs <- matrix(nrow=n, ncol=K+2)
-  z <- array(dim=c(s, n, K+2))
-  dimnames(z) <- list(1:s, target.fdr, c("lambda", "fdr", segnames) )
-  discoveries <- list()
-  if(n==0){
-    Robs <- data.frame(Robs)
-    names(Robs) <- c("lambda", "fdr", segnames)
-    ret <- list("Robs"=Robs, "z"=z)
-    return(ret)
-  }
-  Robs[,2] <- target.fdr
-  for(i in 1:s) z[i, , 1] <- target.fdr
-  for(i in 1:n){
-    ff <- target.fdr[i]
-    cat(ff, " ")
-    ix.lower <- max(which(obj$max1$fdr <= ff)) ###This is the number of discoveries
-    ix.upper <- ix.lower + 1
-    lam.target <- ff*ix.lower
-    Robs[i, 1] <- lam.target
-    for(j in 1:s) z[j, i, 2] <- lam.target
-    z[, i, -c(1, 2)] <- fret:::get_thresh_with_rate(obj$max.perm, obj$max.lambda.pb, obj$nbp,
+
+  thresholds <- data.frame(matrix(nrow=K, ncol=5))
+  names(thresholds) <- c("num.disc", "thresh.pos", "thresh.neg", "chrom", "file")
+  #For each segment record 1) # of discoveries 2) pos threshold 3) neg threshold 4) chromosome 5) file
+
+  tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
+  #We want to draw thresholds with lambda = target.fdr*total num discoveries
+  lam.target <- target.fdr*tot.disc
+  tt <- get_thresh_with_rate(obj$max.perm, obj$max.lambda.pb, obj$nbp,
                                lam.target, obj$zmin)
+  thresholds$thresh.pos <- tt[1,]
+  if(s==1) thresholds$thresh.neg <- -tt[1,]
+    else thresholds$thresh.neg <- tt[2,]
 
-    for(j in 1:K) Robs[i, j+ 2] <- sum(obj$max1$segment[1:ix.lower]==j)
-  }
-  Robs <- data.frame(Robs)
-  names(Robs) <- c("lambda", "fdr", segnames)
-
-
-  ret <- list("Robs"=Robs, "z"=z)
+  for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$segment[1:tot.disc]==j)
+  ix <- which(thresholds$num.disc > 0)
+  thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
+  thresholds$file[ix] <- stats.files[match(thresholds$chrom[ix], stats.files[,1]), 2]
+  discoveries <- get_discoveries(max1=obj$max1[1:tot.disc,], thresholds = thresholds)
+  ret <- list("thresholds"=thresholds, "discoveries"=discoveries)
   return(ret)
 }
 
@@ -224,4 +221,30 @@ get_rate_with_thresh <- function(ll, thresh, np=4){
 
   return(10^(approx(x=abs(ll[ix,1]), y=log10(ll[ix,2]),
                     xout=abs(thresh),  rule=2:1)$y))
+}
+
+
+
+get_discoveries <- function(max1, thresholds){
+  discoveries <- matrix(nrow=nrow(max1), ncol=3)
+  ix <- which(thresholds$num.disc > 0)
+  chru <- unique(thresholds$chrom[ix])
+  for(c in chru){
+    file <- unique(thresholds$file[ix][thresholds$chrom[ix]==c])
+    stopifnot(length(file)==1)
+    stats <- getobj(file)
+    ixc <- which(max1$chr==c)
+    discoveries[ixc, 3] <- c
+    for(i in ixc){
+      strt <- which(stats$sts.smooth$pos==max1$start[i])
+      stp <- which(stats$sts.smooth$pos==max1$stop[i])
+      D <- stats$sts.smooth[strt:stp,]
+      tpos <- thresholds$thresh.pos[max1$segment[i]]
+      tneg <- thresholds$thresh.neg[max1$segment[i]]
+      excr <- excursions(D$ys, c(tpos, tneg))
+      discoveries[i,1] <- D$pos[min(excr[,1])]
+      discoveries[i,2] <- D$pos[max(excr[,2])]
+    }
+  }
+  return(discoveries)
 }
