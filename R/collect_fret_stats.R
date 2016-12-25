@@ -20,6 +20,8 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk,
 
   R <- getobj(fl[1])
   sts <- R$sts
+  chrom <- R$chrom
+  zmin <- R$zmin
   k <- 1
   if("sts.smooth" %in% names(R)){
     sts.smooth <- R$sts.smooth
@@ -32,12 +34,14 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk,
   if("mperm" %in% names(R)){
     perm.var <- R$perm.var
     mperm <- R$mperm
+
     k <- k+1
   }
-
   for(f in fl[-1]){
     cat(f, "..")
     R <- getobj(f)
+    stopifnot(R$chrom == chrom)
+    stopifnot(R$zmin == zmin)
     sts <- rbind(sts, R$sts)
     if(k > 1) sts.smooth <- rbind(sts.smooth, R$sts.smooth)
     if(k > 2) m1 <- rbind(m1, R$m1)
@@ -46,6 +50,8 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk,
       mperm <- rbind(mperm, R$mperm)
     }
   }
+  if(k > 2) m1$chr <- chrom
+  if(k > 3) mperm$chr <- chrom
   cat("\n")
   R$sts <- sts
   if(k > 1) R$sts.smooth <- sts.smooth
