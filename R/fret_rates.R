@@ -3,15 +3,10 @@
 
 #'@title Calculate lambda and fdr for each peak
 #'@description Find thresholds for a range of lambda values. Calculate FDR.
-#'@param max1 Table giving peak height, position, and chromosome for original data
-#'@param max.perm Table giving peak height, position, and chromosome for permuted data
+#'@param file.list List of files with output from fret_stats
 #'@param n.perm Number of permutations
-#'@param zmin Minimum Threshold (length 1 or 2)
-#'@param segment.bounds Data frame with three columns. First column is chromosome.
-#'Columns two and three are segment start and stop
 #'@param fdr.max Maximum fdr to keep data for
-#'@param target.fdr Target fdr values (vector)
-#' @return A list with items z, Robs, and fdr.
+#' @return An object that can be passed to fret_thresholds
 #'@export
 fret_rates <- function(file.list, fdr.max=0.8){
   #max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8){
@@ -21,10 +16,12 @@ fret_rates <- function(file.list, fdr.max=0.8){
   max.perm <- R$mperm
   zmin <- R$zmin
   segment.bounds <- R$seg.bounds
+  n.perm <- R$n.perm
   file.list <- file.list[-1]
   for(f in file.list){
     R <- getobj(f)
     stopifnot(R$zmin==zmin)
+    stopifnot(R$n.perm==n.perm)
     max1 <- rbind(max1, R$m1)
     max.perm <- rbind(max.perm, R$mperm)
     segment.bounds <- rbind(segment.bounds, R$seg.bounds)
@@ -123,7 +120,8 @@ fret_rates <- function(file.list, fdr.max=0.8){
 #'@export
 fret_thresholds <- function(obj, target.fdr){
 
-  if(any(target.fdr < min(obj$max1$fdr))) cat("Warining: Some requested FDR levels not possible.\n")
+  if(any(target.fdr < min(obj$max1$fdr))) cat("Warining: The smallest possible FDR is",
+                                              min(obj$max1$fdr),  ".\n")
   target.fdr <- target.fdr[target.fdr >= min(obj$max1$fdr)]
 
   segnames <- paste0("segment", 1:ncol(obj$max.lambda.pb))
@@ -133,6 +131,7 @@ fret_thresholds <- function(obj, target.fdr){
   Robs <- matrix(nrow=n, ncol=K+2)
   z <- array(dim=c(s, n, K+2))
   dimnames(z) <- list(1:s, target.fdr, c("lambda", "fdr", segnames) )
+  discoveries <- list()
   if(n==0){
     Robs <- data.frame(Robs)
     names(Robs) <- c("lambda", "fdr", segnames)
