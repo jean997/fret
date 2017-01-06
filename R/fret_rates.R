@@ -19,6 +19,7 @@ fret_rates <- function(file.list, fdr.max=0.8){
   n.perm <- R$n.perm
   file.list <- file.list[-1]
   for(f in file.list){
+    cat(f, "\n")
     R <- getobj(f)
     stopifnot(R$zmin==zmin)
     stopifnot(R$n.perm==n.perm)
@@ -35,6 +36,7 @@ fret_rates <- function(file.list, fdr.max=0.8){
   stopifnot(s %in% c(1, 2))
 
   K <- nrow(segment.bounds)
+  cat("There are ", K, " segments total.\n")
   nbp <- segment.bounds$stop-segment.bounds$start + 1
 
   #Segment for each peak in max1
@@ -67,7 +69,7 @@ fret_rates <- function(file.list, fdr.max=0.8){
 
   max.lambda.pb <- matrix(nrow=s, ncol=K)
   for(i in 1:K){
-    #cat(i, "\n")
+    if(i %% 1000 == 1) cat(i, "..")
     m1.ix <- which(max1$segment==i)
     perm.ix <- which(max.perm$segment==i)
 
