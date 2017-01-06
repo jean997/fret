@@ -40,30 +40,14 @@ fret_rates <- function(file.list, fdr.max=0.8){
   nbp <- segment.bounds$stop-segment.bounds$start + 1
 
   #Segment for each peak in max1
-  #max1 has columns mx, chr pos iv1 iv2
-  max1$segment <- apply(max1[, c("chr", "pos")], MARGIN=1, FUN=function(x){
-    s <- which(segment.bounds$chr==as.character(x[1]) &
-                 segment.bounds$start <= as.numeric(x[2]) &
-                 segment.bounds$stop >= as.numeric(x[2]) )
-    if(length(s)==0) return(NA)
-    return(s)
-  })
-  if(any(is.na(max1$segment))){
-    cat("Warning: segment.bounds does not include everything in max1\n")
-    max1 <- max1[!is.na(max1$segment),]
-  }
+  #max1 has columns mx, chr pos iv1 iv2 chr
+
+  chroms <- unique(max1$chr)
+  max1$segment <- match_segments(chr=max1$chr, pos=max1$pos, segment.bounds = segment.bounds)
+  cat("Got max1 segments/")
   #Segment for each peak in perm.maxes
-  max.perm$segment <- apply(max.perm[, c("chr", "pos")], MARGIN=1, FUN=function(x){
-    s <- which(segment.bounds$chr==as.character(x[1]) &
-                 segment.bounds$start <= as.numeric(x[2]) &
-                 segment.bounds$stop >= as.numeric(x[2]) )
-    if(length(s)==0) return(NA)
-    return(s)
-  })
-  if(any(is.na(max.perm$segment))){
-    cat("Warning: segment.bounds does not include everything in perm.maxes\n")
-    max.perm <- max.perm[!is.na(max.perm$segment),]
-  }
+  max.perm$segment <- match_segments(chr=max.perm$chr, pos=max.perm$pos, segment.bounds = segment.bounds)
+  cat("Got max.perm segments.\n")
   max.perm$lambda_perbase <- rep(NA, nrow(max.perm))
   max1$lambda_perbase <- rep(NA, nrow(max1))
 
@@ -249,4 +233,24 @@ get_discoveries <- function(max1, thresholds){
     }
   }
   return(discoveries)
+}
+
+match_segments <- function(chr, pos, segment.bounds){
+  chroms <- unique(chr)
+  #o <- order(segment.bounds$chr, segment.bounds$start, decreasing=FALSE)
+  #stopifnot(all(o==1:nrow(segment.bounds)))
+  ix <- rep(NA, length(chr))
+  for(c in chroms){
+    cat(c, "..")
+    ix_dat <- which(chr==c)
+    ix_sb <- which(segment.bounds$chr==c)
+    stopifnot(all(pos[ix_dat] <= max(segment.bounds$stop[ix_sb])))
+    slocal <- sapply(pos[ix_dat], FUN=function(p){
+      which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
+    })
+    stopifnot(all(pos[ix_dat]) <= segment.bounds$stop[slocal])
+    stopifnot(length(ix[ix_dat])== length(ix_sb[slocal]))
+    ix[ix_dat] <- ix_sb[slocal]
+  }
+  return(ix)
 }
