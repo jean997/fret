@@ -48,7 +48,7 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
   fret.obj$m1$lambda_perbase <- rep(0, nrow(fret.obj$m1))
   fret.obj$mperm$lambda_perbase <- rep(0, nrow(fret.obj$mperm))
   for(i in 1:K){
-    #if(i %% 1000 == 1) cat(i, "..")
+    if(i %% 10 == 1) cat(i, "..")
     #m1.ix <- which(max1$segment==i)
     #perm.ix <- which(max.perm$segment==i)
     #No peaks in data and almost no peaks in permutations
