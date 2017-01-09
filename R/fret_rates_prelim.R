@@ -90,7 +90,7 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
   }
   fret.obj$seg.bounds <- segment.bounds
   if(!is.null(save.file)){
-    save(fret.obj, save.file)
+    save(fret.obj, file=save.file)
     return(0)
   }
   return(fret.obj)
