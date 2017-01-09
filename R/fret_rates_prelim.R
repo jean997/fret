@@ -1,10 +1,10 @@
-#' Calculate per-base error rates for original and permutation peaks 
+#' Calculate per-base error rates for original and permutation peaks
 #'@param fret.obj Either a fret object or a file containing a fret object
 #'@param segment.bounds Optional data frame of segment bounds. If ommitted
 #'then fret.obj should contain an item `seg.bounds` which will be used instead.
 #'@param parallel Run in parallel?
 #'@export
-fret_rates_prelim <- function(fret.obj, segment.bounds=NULL, 
+fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
                               parallel=FALSE, save.file=NULL){
   if(class(fret.obj)=="character") fret.obj <- getobj(fret.obj)
 
@@ -57,10 +57,10 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
       next
     }
     #No permutation peaks above z0 but there are peaks above zmin in data
-      #i.e. highly significant but cant estimate significance 
+      #i.e. highly significant but cant estimate significance
       #because all perm peaks are too low
       #probably very rare
-    if(nsegs1[i] > 0 & nsegsperm ==0){
+    if(nsegs1[i] > 0 & nsegsperm[i] ==0){
       m1.ix <- which(max1$segment==i)
       segment.bounds[i, mlp_ix] <- 0
       fret.obj$m1$lambda_perbase[m1.ix] <- 0
