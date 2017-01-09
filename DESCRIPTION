@@ -21,6 +21,8 @@ Collate:
     'collect_fret_stats.R'
     'find_segments.R'
     'fret_rates.R'
+    'fret_rates_prelim.R'
+    'fret_thresholds.R'
     'fret_stats4.R'
     'ksmooth_0.R'
     'maxes_1seg.R'

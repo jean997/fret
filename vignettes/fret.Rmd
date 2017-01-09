@@ -40,7 +40,7 @@ You will need:
   
 ### Choose s0, zmin, and z0
 
-Next we need to choose s0, the variance inflation constant, zmin, the smallest threshold value to permit and z0, the merging level. We do this using some large, hopefully representative chunk of the data.
+Next we need to choose s0, the variance inflation constant, zmin, the smallest threshold value to permit and z0, the merging level. We do this using some large, hopefully representative chunk of the data. You also might consider using an entire chromosome, especially if you have access to multiple cores. 
 
  1. Calculate test statistics for your chosen data chunk using the`fret_stats` function. This function can calculate Huber or linear regression test statistics. It will also calculate permutation test statistics and smooth the test statistics if desired. For now we are just choosing s0 so we don't need any permutations and we also don't need to smooth yet so we set `n.perm=0` and `smoother="none"`. Lets say we wish to use the 50kb stretch between positions 84400000 84900000 on chromosome 1. We run:
   
@@ -67,7 +67,7 @@ The object returned (`stats` above) is a list that contains the original paramet
 s0 <- choose_s0(beta=stats$stats$Beta, sd=stats$stats$SD)
 ```
 
-  3. Choose zmin using the `choose_zmin` function which adjusts the statistics using the s0 variance inflation constant and then smooths. The minimum threshold zmin is chosen as a specified quantile (default is 90%) of these smoothed test statistics. The smoother used in this step should match what is used in the final analysis. 
+  3. Choose zmin using the `choose_zmin` function which adjusts the statistics using the variance inflation constant we chose in step 2 and then smooths. The minimum threshold, `zmin`, will be a specified quantile (default is 90%) of these smoothed test statistics. The smoother used in this step should match what is used in the final analysis. 
   
   We recomend choosing a bandwidth approximately equal to the size of discoveries you expect to make. The smoother type `ksmooth_0` is appropriate for DNase-seq data and other data types where missing data can be interpreted as a phenotype value of 0. The `ksmooth` smoother type is appropriate for bisulfite sequencing and other data types where base-pairs with no data should be treated as missing.
 
@@ -78,30 +78,59 @@ zmin <- choose_zmin(beta=stats$stats$Beta, sd=stats$stats$SD, s0=s0,
                     bandwidth=150, smoother="ksmooth_0", zmin_quantile=0.9)
 ``` 
   
-  4. Select z0. We recomend setting z0 to 0.3*zmin.
+  4. Select $z_0$. We recomend setting $z_0$ to `0.3*zmin`.
   
 ### Calculate test statistics and permuation test statistics genome-wide
 
-This can be a lot of computing and you may wish to break it into smaller than chromosome sized pieces if you can access lots of nodes. The `fret_stats` function will break computation into `chunksize`-sized chunks where `chunksize` gives the number of lines. If you want to process ony one or a few chunks you can use the `which.chunks` argument to specify a list of chunks you wish to process. For each chunk, `fret_stats` will write a temporary file. If `which.chunks` isn't specified (i.e. we analyze the whole chromosome), then `fret_stats` will automatically collate all the temporary files and delete them. Otherwise, you will need to follow up your analysis by calling the `collect_fret_stats` function.
+This can be a lot of computing and you may wish to break it into smaller than chromosome sized pieces if you can access lots of nodes. The `fret_stats` function will break computation into `chunksize`-sized chunks where `chunksize` gives the number of lines in the phenotype file. If you want to process ony one or a few chunks you can use the `which.chunks` argument to specify a list of chunks you wish to process. For each chunk, `fret_stats` will write a temporary file. If `which.chunks` isn't specified (i.e. we analyze the whole chromosome), then `fret_stats` will automatically collate all the temporary files and delete them. Otherwise, you will need to follow up your analysis by calling the `collect_fret_stats` function.
 
-Here is an example where we process the first three chunks of size 100,000 lines:
+By default, `fret_stats` will use all available cores. This can be adjusted using the `parallel` and `cores` options. If no argument is supplied to `temp.prefix` a random string of letters will be used. 
+
+Here is an example where we process the first three chunks of size 100,000 linesusing 500 permutations :
 
 ```{r}
-fret_stats(pheno.file, trait.file, s0, n.perm, zmin, z0=0.3*zmin, 
-              pheno.transformation=NULL, trait=c("x"), 
-              covariates=c("age", "sex", "batch"),
-              chunksize=1e5, which.chunks=1:3,
-              stat.type="huber", bandwidth=150, smoother="ksmooth_0", chrom="chr1")
+fret_stats(pheno.file, trait.file, s0=s0, 
+           n.perm=500, zmin=zmin, z0=0.3*zmin, 
+           pheno.transformation=NULL, trait=c("x"), 
+           covariates=c("age", "sex", "batch"),
+           chunksize=1e5, which.chunks=1:3, temp.prefix="test_chr1",
+           stat.type="huber", bandwidth=150, smoother="ksmooth_0", chrom="chr1")
 
 ```
 
-`fret_stats` keeps only the information needed to identify peaks from the permuation stats and discards the statistics themselves to avoid creating enormous objects. 
-### Choose interval boundaries
+This will write three files: `./test_chr1.1.RData`, `./test_chr1.2.RData` and `./test_chr1.3.RData`.
 
-The next step is to set the boundaries for the intervals on which the threshold can vary. Note that these are not the same as boundaries of differential regions. We find that results are robust to various different interval boundary choices but you should select a minimum interval length. We recomend 50 times the smoothing bandwidth or 50 times the expected width of discoveries. The function `find_segments` can be used to choose interval boundaries automatically using the variance of the smoothed permutation test statistics.
+`fret_stats` keeps only the information needed to identify peaks from the permuation statistics and discards the statistics themselves to avoid creating enormous objects. 
+
+Now we collect all the temporary files into one file:
 
 ```{r}
+collect_fret_stats <- function(temp.dir="./", temp.prefix="test_chr1", which.chunk=1:3,
+                               out.file="test_chr1.RData", del.temp=TRUE)
+```
+This will combine the information from the three temporary files into one file `test_chr1.RData` and delete the temporary files. `collect_fret_stats` will also automatically determine segment boundaries for the intervals on which the threshold can vary. 
+ Note that these are not the same as boundaries of differential regions. 
+ By default, the minimum interval width is 50 times the smoothing bandwidth. This can be modified with the `min.interval.width` option to `collect_fret_stats`. 
+ 
+ You can also determine new boundaries using the `find_segments` function (this is the function called by `collect_fret_stats`):
+
+```{r}
+stats <- getobj("test_chr1.RData")
 seg.bounds <- find_segments(vv = stats$perm.var$var, pos=stats$perm.var$pos, min.length=50*150)
 ```
 
 ### Map thresholds to false discovery rates
+
+Ok. So now the hard part is done and all we need to do is use the information we have to associate sets of thresholds with false discovery rates. Lets say we have files called "test_chr1.RData", "test_chr2.RData" and "test_chr3.RData". We run
+
+```{r}
+rates <- fret_rates(file.list=paste0("test_chr", 1:3, ".RData"))
+```
+
+Now we can pull out the set of discoveries with fdr < 0.05 or 0.1:
+
+```{r}
+thresh_05 <- fret_thresholds(rates, target.fdr=0.05)
+```
+
+The thresholds object is a list with two elements: `threhsolds` which reports how many discoveries, the positive and negative threshold and chromosome for each segment and `discoveries` which lists all discoveries made at the desired level.

@@ -1,20 +1,18 @@
-#'@import intervals
-
 
 #'@title Calculate lambda and fdr for each peak
 #'@description Find thresholds for a range of lambda values. Calculate FDR.
-#'@param file.list List of files with output from fret_stats
+#'@param file.list List of files with output from fret_rates_prelim
 #'@param n.perm Number of permutations
 #'@param fdr.max Maximum fdr to keep data for
 #' @return An object that can be passed to fret_thresholds
 #'@export
-fret_rates <- function(file.list, fdr.max=0.8){
-  #max1, max.perm, n.perm, zmin, segment.bounds,fdr.max=0.8){
+fret_rates <- function(file.list, fdr.max=0.8, temp.dir=".", write.temp=FALSE){
   #Get info from files
   R <- getobj(file.list[1])
   max1 <- R$m1
   max.perm <- R$mperm
   zmin <- R$zmin
+  R$seg.bounds$name <- paste0(R$seg.bounds$chr, ".", 1:nrow(R$seg.bounds))
   segment.bounds <- R$seg.bounds
   n.perm <- R$n.perm
   file.list <- file.list[-1]
@@ -25,75 +23,24 @@ fret_rates <- function(file.list, fdr.max=0.8){
     stopifnot(R$n.perm==n.perm)
     max1 <- rbind(max1, R$m1)
     max.perm <- rbind(max.perm, R$mperm)
+    R$seg.bounds$name <- paste0(R$seg.bounds$chr, ".", 1:nrow(R$seg.bounds))
     segment.bounds <- rbind(segment.bounds, R$seg.bounds)
   }
 
 
   #Check inputs
-  stopifnot(ncol(segment.bounds)==3)
-  stopifnot(names(segment.bounds)==c("chr", "start", "stop"))
   s <- length(zmin)
   stopifnot(s %in% c(1, 2))
 
   K <- nrow(segment.bounds)
   cat("There are ", K, " segments total.\n")
-  nbp <- segment.bounds$stop-segment.bounds$start + 1
-
-  #Segment for each peak in max1
-  #max1 has columns mx, chr pos iv1 iv2 chr
-
-  chroms <- unique(max1$chr)
-  max1$segment <- match_segments(chr=max1$chr, pos=max1$pos, segment.bounds = segment.bounds)
-  cat("Got max1 segments/")
-  #Segment for each peak in perm.maxes
-  max.perm$segment <- match_segments(chr=max.perm$chr, pos=max.perm$pos, segment.bounds = segment.bounds)
-  cat("Got max.perm segments.\n")
-  max.perm$lambda_perbase <- rep(NA, nrow(max.perm))
-  max1$lambda_perbase <- rep(NA, nrow(max1))
-
-  max.lambda.pb <- matrix(nrow=s, ncol=K)
-  for(i in 1:K){
-    if(i %% 1000 == 1) cat(i, "..")
-    m1.ix <- which(max1$segment==i)
-    perm.ix <- which(max.perm$segment==i)
-
-    if(length(m1.ix)==0 & length(perm.ix)< 2){
-      max.lambda.pb[, i] <- 0
-      next
-    }
-    if(length(perm.ix) > 0){
-      m <- max.perm$mx[perm.ix]
-      o <- order(m, decreasing=TRUE)
-      oinv <- match(1:length(m), o)
-      ll <- lamtab(mx=m, zmin=zmin, nbp = nbp[i], n.perm=n.perm)
-      max.perm$lambda_perbase[perm.ix] <- ll[,2][oinv]
-      if(s==1){
-        max.lambda.pb[1, i] <- fret:::get_rate_with_thresh(ll, zmin, np=2)
-      }else{
-        max.lambda.pb[1, i] <- fret:::get_rate_with_thresh(ll, zmin[1], np=2)
-        max.lambda.pb[2, i] <- fret:::get_rate_with_thresh(ll, zmin[2], np=2)
-      }
-      if(length(m1.ix) > 0){
-        #Rates
-        rts <- sapply(max1$mx[m1.ix], FUN=function(thresh){
-            fret:::get_rate_with_thresh(ll, thresh)
-        })
-        max1$lambda_perbase[m1.ix] <- rts
-      }
-      max.perm[perm.ix, ] <- max.perm[perm.ix,][o,]
-    }else{
-      #perm.ix is empty but max1.ix is not
-      #i.e. no permutation peaks above z0 but there are some non perm. peaks above zmin
-      #i.e. highly significant but cant estimate significance because all perm peaks are too low
-      #probably very rare
-      max1$lambda_perbase[m1.ix] <- 0
-    }
-
-  }
 
   max1 <- max1[order(max1$lambda_perbase, decreasing=FALSE), ]
-  nbp <- matrix(rep(nbp, s), byrow=TRUE, nrow=s)
-  max.lambda <- max.lambda.pb*nbp
+  nbp <- matrix(rep(segment.bounds$nbp, s), byrow=TRUE, nrow=s)
+  mlp_ix <- grep("max_lambda", names(segment.bounds))
+
+  max.lambda <- t(segment.bounds[,mlp_ix]*nbp)
+
   max1$lambda <- sapply(max1$lambda_perbase, FUN=function(r){
     sum(pmin(r*nbp, max.lambda))
   })
@@ -102,48 +49,6 @@ fret_rates <- function(file.list, fdr.max=0.8){
   return(list("max1"=max1, "max.lambda.pb"=max.lambda.pb,
               "max.perm"=max.perm, "nbp"=nbp, "zmin"=zmin))
 }
-
-#'@title Get thresholds for a target FDR level
-#'@param obj Object produced by fret_rates
-#'@param target.fdr trget fdr level
-#'@param stats.files Two column matrix.
-#'The first column is chromosome. The second column is the corresponding stats file.
-#' @return An object that can be passed to fret_thresholds
-#'@export
-fret_thresholds <- function(obj, target.fdr, stats.files){
-
-  stopifnot(ncol(stats.files)==2)
-  chrs <- unique(obj$max1$chr)
-  stopifnot(all(chrs %in% stats.files[,1]))
-  stopifnot(length(target.fdr)==1)
-  if(target.fdr < min(obj$max1$fdr)) stop("The smallest possible FDR is",
-                                              min(obj$max1$fdr),  ".\n")
-
-  K <- dim(obj$max.lambda.pb)[2]
-  s <- dim(obj$max.lambda.pb)[1]
-
-  thresholds <- data.frame(matrix(nrow=K, ncol=5))
-  names(thresholds) <- c("num.disc", "thresh.pos", "thresh.neg", "chrom", "file")
-  #For each segment record 1) # of discoveries 2) pos threshold 3) neg threshold 4) chromosome 5) file
-
-  tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
-  #We want to draw thresholds with lambda = target.fdr*total num discoveries
-  lam.target <- target.fdr*tot.disc
-  tt <- get_thresh_with_rate(obj$max.perm, obj$max.lambda.pb, obj$nbp,
-                               lam.target, obj$zmin)
-  thresholds$thresh.pos <- tt[1,]
-  if(s==1) thresholds$thresh.neg <- -tt[1,]
-    else thresholds$thresh.neg <- tt[2,]
-
-  for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$segment[1:tot.disc]==j)
-  ix <- which(thresholds$num.disc > 0)
-  thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
-  thresholds$file[ix] <- stats.files[match(thresholds$chrom[ix], stats.files[,1]), 2]
-  discoveries <- get_discoveries(max1=obj$max1[1:tot.disc,], thresholds = thresholds)
-  ret <- list("thresholds"=thresholds, "discoveries"=discoveries)
-  return(ret)
-}
-
 
 get_thresh_with_rate <- function(max.perm, max.lambda.pb, nbp,
                                  lambda, zmin, np=4){
@@ -235,19 +140,30 @@ get_discoveries <- function(max1, thresholds){
   return(discoveries)
 }
 
-match_segments <- function(chr, pos, segment.bounds){
+match_segments <- function(chr, pos, segment.bounds,
+                           parallel=FALSE, cores=parallel::detectCores()-1){
   chroms <- unique(chr)
   #o <- order(segment.bounds$chr, segment.bounds$start, decreasing=FALSE)
   #stopifnot(all(o==1:nrow(segment.bounds)))
   ix <- rep(NA, length(chr))
+  if(parallel){
+    cl <- makeCluster(cores, type="FORK")
+    on.exit(stopCluster(cl))
+  }
   for(c in chroms){
     cat(c, "..")
     ix_dat <- which(chr==c)
     ix_sb <- which(segment.bounds$chr==c)
     stopifnot(all(pos[ix_dat] <= max(segment.bounds$stop[ix_sb])))
-    slocal <- sapply(pos[ix_dat], FUN=function(p){
-      which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
-    })
+    if(parallel){
+      slocal <- parSapply(cl, pos[ix_dat], FUN=function(p){
+        which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
+      })
+    }else{
+      slocal <- sapply(pos[ix_dat], FUN=function(p){
+        which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
+      })
+    }
     stopifnot(all(pos[ix_dat]) <= segment.bounds$stop[slocal])
     stopifnot(length(ix[ix_dat])== length(ix_sb[slocal]))
     ix[ix_dat] <- ix_sb[slocal]

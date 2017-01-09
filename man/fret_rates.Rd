@@ -4,26 +4,17 @@
 \alias{fret_rates}
 \title{Calculate lambda and fdr for each peak}
 \usage{
-fret_rates(max1, max.perm, n.perm, zmin, segment.bounds, fdr.max = 0.8)
+fret_rates(file.list, fdr.max = 0.8, temp.dir = ".", write.temp = FALSE)
 }
 \arguments{
-\item{max1}{Table giving peak height, position, and chromosome for original data}
-
-\item{max.perm}{Table giving peak height, position, and chromosome for permuted data}
-
-\item{n.perm}{Number of permutations}
-
-\item{zmin}{Minimum Threshold (length 1 or 2)}
-
-\item{segment.bounds}{Data frame with three columns. First column is chromosome.
-Columns two and three are segment start and stop}
+\item{file.list}{List of files with output from fret_rates_prelim}
 
 \item{fdr.max}{Maximum fdr to keep data for}
 
-\item{target.fdr}{Target fdr values (vector)}
+\item{n.perm}{Number of permutations}
 }
 \value{
-A list with items z, Robs, and fdr.
+An object that can be passed to fret_thresholds
 }
 \description{
 Find thresholds for a range of lambda values. Calculate FDR.
