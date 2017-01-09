@@ -7,15 +7,17 @@
 #'@export
 fret_thresholds <- function(obj, target.fdr, stats.files){
 
-  stopifnot(ncol(stats.files)==2)
+  if(!is.null(stats.files)){
+    stopifnot(ncol(stats.files)==2)
+    stopifnot(all(chrs %in% stats.files[,1]))
+  }
   chrs <- unique(obj$max1$chr)
-  stopifnot(all(chrs %in% stats.files[,1]))
   stopifnot(length(target.fdr)==1)
   if(target.fdr < min(obj$max1$fdr)) stop("The smallest possible FDR is",
                                           min(obj$max1$fdr),  ".\n")
 
-  K <- dim(obj$max.lambda.pb)[2]
-  s <- dim(obj$max.lambda.pb)[1]
+  K <- nrow(obj$segment.bounds)
+  s <- length(obj$zmin)
 
   thresholds <- data.frame(matrix(nrow=K, ncol=5))
   names(thresholds) <- c("num.disc", "thresh.pos", "thresh.neg", "chrom", "file")
@@ -24,7 +26,9 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
-  tt <- get_thresh_with_rate(obj$max.perm, obj$max.lambda.pb, obj$nbp,
+  mlp_ix <- grep("max_lambda", names(obj$segment.bounds))
+
+  tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds[,mlp_ix, drop=FALSE], obj$segment.bounds$nbp,
                              lam.target, obj$zmin)
   thresholds$thresh.pos <- tt[1,]
   if(s==1) thresholds$thresh.neg <- -tt[1,]
@@ -33,9 +37,85 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$segment[1:tot.disc]==j)
   ix <- which(thresholds$num.disc > 0)
   thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
+  if(is.null(stats.files)) return(thresholds)
+  
   thresholds$file[ix] <- stats.files[match(thresholds$chrom[ix], stats.files[,1]), 2]
   discoveries <- get_discoveries(max1=obj$max1[1:tot.disc,], thresholds = thresholds)
   ret <- list("thresholds"=thresholds, "discoveries"=discoveries)
   return(ret)
 }
 
+get_thresh_with_rate <- function(max.perm, max.lambda.pb, nbp,
+                                 lambda, zmin, np=4){
+  s <- length(zmin)
+  K <- nrow(max.lambda.pb)
+  #stopifnot(all(dim(max.lambda.pb)==dim(nbp)))
+  thresh <- matrix(ncol=K, nrow=s)
+  zmin.mat <- t(matrix(rep(zmin, each=K), byrow=TRUE, nrow=s ))
+  if(s==2) nbp <- cbind(nbp, nbp)
+  lambda.pb <- lambda/sum(nbp)
+  while(any(max.lambda.pb < lambda.pb & max.lambda.pb > 0)){
+    ix <- which(max.lambda.pb < lambda.pb)
+    thresh[ix] <- zmin.mat[ix]
+    lambda <- lambda - sum(max.lambda.pb[ix]*nbp[ix])
+    nbp[ix] <- 0
+    max.lambda.pb[ix] <- -1
+    lambda.pb <- lambda/sum(nbp)
+  }
+  #Positive/All if s==1
+  if(s==1){
+    segs <- (1:K)[nbp > 0]
+  }else{
+    segs <- (1:K)[nbp[,1] > 0]
+  }
+  zpos <- sapply(segs, FUN=function(k){
+    m <- max.perm[max.perm$segment==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
+    get_thresh_with_rate1(m, lambda.pb)
+  })
+  thresh[segs, 1] <- zpos
+  if(s==1) return(thresh)
+
+  segs <- (1:K)[nbp[,2] > 0]
+  zneg <- sapply(segs, FUN=function(k){
+    m <- max.perm[max.perm$segment==k & max.perm$mx < 0, c("mx", "lambda_perbase")]
+    m$mx <- -1*m$mx
+    m <- m[dim(m)[1]:1, ]
+    get_thresh_with_rate1(m, lambda.pb)
+  })
+  thresh[ segs,2] <- -1*zneg
+  return(thresh)
+}
+
+#Given a per-base fdr, what threshold corresponds?
+get_thresh_with_rate1 <- function(ll, rate, np=4){
+  if(rate < min(ll[,2])){
+    ff <- lm(ll[1:np, 1]~log10(ll[1:np, 2]))
+    return(ff$coefficients[2]*log10(rate) + ff$coefficients[1])
+  }
+  return(approx(y=ll[,1], x=log10(ll[,2]),
+                xout=log10(rate), yright=min(ll[,1]))$y)
+}
+
+get_discoveries <- function(max1, thresholds){
+  discoveries <- matrix(nrow=nrow(max1), ncol=3)
+  ix <- which(thresholds$num.disc > 0)
+  chru <- unique(thresholds$chrom[ix])
+  for(c in chru){
+    file <- unique(thresholds$file[ix][thresholds$chrom[ix]==c])
+    stopifnot(length(file)==1)
+    stats <- getobj(file)
+    ixc <- which(max1$chr==c)
+    discoveries[ixc, 3] <- c
+    for(i in ixc){
+      strt <- which(stats$sts.smooth$pos==max1$start[i])
+      stp <- which(stats$sts.smooth$pos==max1$stop[i])
+      D <- stats$sts.smooth[strt:stp,]
+      tpos <- thresholds$thresh.pos[max1$segment[i]]
+      tneg <- thresholds$thresh.neg[max1$segment[i]]
+      excr <- excursions(D$ys, c(tpos, tneg))
+      discoveries[i,1] <- D$pos[min(excr[,1])]
+      discoveries[i,2] <- D$pos[max(excr[,2])]
+    }
+  }
+  return(discoveries)
+}

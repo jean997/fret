@@ -95,3 +95,28 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
   }
   return(fret.obj)
 }
+
+
+#In one segment, at a partiucular threshold, what is the rate of false discoveries?
+#ll produced by lamtab. Two columns. First column is threshold. Second column is perbase fdr
+#ll is assumed to be sorted so that the first column is decreasing.
+#np If thresh is larger than the largest threshold or smaller than the smallest threshold
+# in the first column of ll then we estimate the rate by fitting a line and projecting.
+#np controls how many points to use when fitting the line.
+get_rate_with_thresh <- function(ll, thresh, np=4){
+  if(sum(ll[,1] < 0) < 2 & thresh < 0) return(0)
+  if(sum(ll[,1] > 0) < 2 & thresh > 0) return(0)
+  if(thresh > max(ll[,1])){
+    ff <- lm(log10(ll[1:np, 2])~ ll[1:np, 1])
+    return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
+  }else if(thresh < min(ll[,1]) & thresh < 0){
+    n <- nrow(ll)
+    ff <- lm(log10(ll[(n-np+1):n, 2])~ ll[(n-np+1):n, 1])
+    return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
+  }
+  sgn <- sign(thresh)
+  ix <- which(sign(ll[,1])==sgn)
+
+  return(10^(approx(x=abs(ll[ix,1]), y=log10(ll[ix,2]),
+                    xout=abs(thresh),  rule=2:1)$y))
+}
