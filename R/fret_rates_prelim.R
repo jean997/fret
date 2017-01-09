@@ -74,7 +74,7 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
     ll <- fret:::lamtab(mx=m, zmin=fret.obj$zmin, nbp = segment.bounds$nbp[i], n.perm=fret.obj$n.perm)
     fret.obj$mperm$lambda_perbase[perm.ix] <- ll[,2][oinv]
     if(s==1){
-      segement.bounds[i, mlp_ix] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=2)
+      segment.bounds[i, mlp_ix] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=2)
     }else{
       segment.bounds[i, mlp_ix[1]] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=2)
       segment.bounds[i, mlp_ix[2]] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=2)
