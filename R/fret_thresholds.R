@@ -27,7 +27,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
 
-  tt <- fret:::get_thresh_with_rate(obj$max.perm, segment.bounds,
+  tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds,
                                     lam.target, obj$zmin, np=2)
   thresholds$thresh.pos <- tt[,1]
   if(s==1) thresholds$thresh.neg <- -tt[,1]
