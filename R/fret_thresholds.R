@@ -19,8 +19,8 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   K <- nrow(obj$segment.bounds)
   s <- length(obj$zmin)
 
-  thresholds <- data.frame(matrix(nrow=K, ncol=5))
-  names(thresholds) <- c("num.disc", "thresh.pos", "thresh.neg", "chrom", "file")
+  thresholds <- data.frame(matrix(nrow=K, ncol=6))
+  names(thresholds) <- c("num.disc", "thresh.pos", "thresh.neg", "chrom", "file", "name")
   #For each segment record 1) # of discoveries 2) pos threshold 3) neg threshold 4) chromosome 5) file
 
   tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
@@ -33,7 +33,8 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   if(s==1) thresholds$thresh.neg <- -tt[,1]
   else thresholds$thresh.neg <- tt[,2]
 
-  for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$segment[1:tot.disc]==j)
+  for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$name[1:tot.disc]==segment.bounds$name[j])
+  thresholds$name <- segment.bounds$name
   ix <- which(thresholds$num.disc > 0)
   thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
   if(is.null(stats.files)) return(thresholds)
