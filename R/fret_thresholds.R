@@ -47,7 +47,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
 get_thresh_with_rate <- function(max.perm, segment.bounds,  
                                  lambda, zmin, np=4){
   s <- length(zmin)
-  K <- nrow(max.lambda.pb)
+  K <- nrow(segment.bounds)
   stopifnot("name" %in% names(segment.bounds))
   stopifnot("nbp" %in% names(segment.bounds))
   mlp_ix <- grep("max_lambda_perbase", names(segment.bounds))
