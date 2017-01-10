@@ -33,7 +33,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   if(s==1) thresholds$thresh.neg <- -tt[,1]
   else thresholds$thresh.neg <- tt[,2]
 
-  for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$name[1:tot.disc]==segment.bounds$name[j])
+  for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$name[1:tot.disc]==obj$segment.bounds$name[j])
   thresholds$name <- segment.bounds$name
   ix <- which(thresholds$num.disc > 0)
   thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
