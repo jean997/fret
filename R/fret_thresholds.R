@@ -27,8 +27,8 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
 
-  tt <- fret:::get_thresh_with_rate(obj$max.perm, as.matrix(obj$segment.bounds[,mlp_ix, drop=FALSE]),
-                                    obj$segment.bounds$nbp, lam.target, obj$zmin)
+  tt <- fret:::get_thresh_with_rate(obj$max.perm, segment.bounds,
+                                    lam.target, obj$zmin, np=2)
   thresholds$thresh.pos <- tt[,1]
   if(s==1) thresholds$thresh.neg <- -tt[,1]
   else thresholds$thresh.neg <- tt[,2]
@@ -76,7 +76,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
   segs <- segment.bounds$name[ix]
   zpos <- sapply(segs, FUN=function(k){
     m <- max.perm[max.perm$name==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
-    fret:::get_thresh_with_rate1(m, lambda.pb, np=2)
+    fret:::get_thresh_with_rate1(m, lambda.pb, np=np)
   })
   thresh[ix, 1] <- zpos
   if(s==1) return(thresh)
@@ -87,7 +87,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
     m <- max.perm[max.perm$name==k & max.perm$mx < 0, c("mx", "lambda_perbase")]
     m$mx <- -1*m$mx
     m <- m[dim(m)[1]:1, ]
-    get_thresh_with_rate1(m, lambda.pb, np=2)
+    get_thresh_with_rate1(m, lambda.pb, np=np)
   })
   thresh[ix,2] <- -1*zneg
   return(thresh)
