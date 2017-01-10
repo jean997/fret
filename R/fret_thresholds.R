@@ -7,11 +7,11 @@
 #'@export
 fret_thresholds <- function(obj, target.fdr, stats.files){
 
+  chrs <- unique(obj$max1$chr)
   if(!is.null(stats.files)){
     stopifnot(ncol(stats.files)==2)
     stopifnot(all(chrs %in% stats.files[,1]))
   }
-  chrs <- unique(obj$max1$chr)
   stopifnot(length(target.fdr)==1)
   if(target.fdr < min(obj$max1$fdr)) stop("The smallest possible FDR is",
                                           min(obj$max1$fdr),  ".\n")
@@ -26,13 +26,12 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
-  mlp_ix <- grep("max_lambda", names(obj$segment.bounds))
 
-  tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds[,mlp_ix, drop=FALSE], obj$segment.bounds$nbp,
-                             lam.target, obj$zmin)
-  thresholds$thresh.pos <- tt[1,]
-  if(s==1) thresholds$thresh.neg <- -tt[1,]
-  else thresholds$thresh.neg <- tt[2,]
+  tt <- fret:::get_thresh_with_rate(obj$max.perm, as.matrix(obj$segment.bounds[,mlp_ix, drop=FALSE]),
+                                    obj$segment.bounds$nbp, lam.target, obj$zmin)
+  thresholds$thresh.pos <- tt[,1]
+  if(s==1) thresholds$thresh.neg <- -tt[,1]
+  else thresholds$thresh.neg <- tt[,2]
 
   for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$segment[1:tot.disc]==j)
   ix <- which(thresholds$num.disc > 0)
@@ -45,14 +44,24 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   return(ret)
 }
 
-get_thresh_with_rate <- function(max.perm, max.lambda.pb, nbp,
+get_thresh_with_rate <- function(max.perm, segment.bounds,  
                                  lambda, zmin, np=4){
   s <- length(zmin)
   K <- nrow(max.lambda.pb)
+  stopifnot("name" %in% names(segment.bounds))
+  stopifnot("nbp" %in% names(segment.bounds))
+  mlp_ix <- grep("max_lambda_perbase", names(segment.bounds))
+  stopifnot(length(mlp_ix) > 0)
+
   #stopifnot(all(dim(max.lambda.pb)==dim(nbp)))
-  thresh <- matrix(ncol=K, nrow=s)
+  thresh <- matrix(nrow=K, ncol=s)
   zmin.mat <- t(matrix(rep(zmin, each=K), byrow=TRUE, nrow=s ))
-  if(s==2) nbp <- cbind(nbp, nbp)
+  max.lambda.pb <- as.matrix(segment_bounds[,mlp_ix, drop=FALSE])
+  if(s==2){
+    nbp <- cbind(segment.bounds$nbp, segment.bounds$nbp)
+  }else{
+    nbp <- matrix(segment.bounds$nbp, nrow=K) 
+  }
   lambda.pb <- lambda/sum(nbp)
   while(any(max.lambda.pb < lambda.pb & max.lambda.pb > 0)){
     ix <- which(max.lambda.pb < lambda.pb)
@@ -63,26 +72,24 @@ get_thresh_with_rate <- function(max.perm, max.lambda.pb, nbp,
     lambda.pb <- lambda/sum(nbp)
   }
   #Positive/All if s==1
-  if(s==1){
-    segs <- (1:K)[nbp > 0]
-  }else{
-    segs <- (1:K)[nbp[,1] > 0]
-  }
+  ix <- which(nbp[,1] > 0)
+  segs <- segment.bounds$name[ix]
   zpos <- sapply(segs, FUN=function(k){
-    m <- max.perm[max.perm$segment==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
-    get_thresh_with_rate1(m, lambda.pb)
+    m <- max.perm[max.perm$name==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
+    fret:::get_thresh_with_rate1(m, lambda.pb, np=2)
   })
-  thresh[segs, 1] <- zpos
+  thresh[ix, 1] <- zpos
   if(s==1) return(thresh)
 
-  segs <- (1:K)[nbp[,2] > 0]
+  ix <- which(nbp[,2] > 0)
+  segs <- segment.bounds$name[ix]
   zneg <- sapply(segs, FUN=function(k){
-    m <- max.perm[max.perm$segment==k & max.perm$mx < 0, c("mx", "lambda_perbase")]
+    m <- max.perm[max.perm$name==k & max.perm$mx < 0, c("mx", "lambda_perbase")]
     m$mx <- -1*m$mx
     m <- m[dim(m)[1]:1, ]
-    get_thresh_with_rate1(m, lambda.pb)
+    get_thresh_with_rate1(m, lambda.pb, np=2)
   })
-  thresh[ segs,2] <- -1*zneg
+  thresh[ix,2] <- -1*zneg
   return(thresh)
 }
 
