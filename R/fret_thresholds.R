@@ -56,7 +56,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
   #stopifnot(all(dim(max.lambda.pb)==dim(nbp)))
   thresh <- matrix(nrow=K, ncol=s)
   zmin.mat <- t(matrix(rep(zmin, each=K), byrow=TRUE, nrow=s ))
-  max.lambda.pb <- as.matrix(segment_bounds[,mlp_ix, drop=FALSE])
+  max.lambda.pb <- as.matrix(segment.bounds[,mlp_ix, drop=FALSE])
   if(s==2){
     nbp <- cbind(segment.bounds$nbp, segment.bounds$nbp)
   }else{
