@@ -38,14 +38,14 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   ix <- which(thresholds$num.disc > 0)
   thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
   if(is.null(stats.files)) return(thresholds)
-  
+  cat("Thresholds found. Retrieving discoveries.\n")
   thresholds$file[ix] <- stats.files[match(thresholds$chrom[ix], stats.files[,1]), 2]
   discoveries <- get_discoveries(max1=obj$max1[1:tot.disc,], thresholds = thresholds)
   ret <- list("thresholds"=thresholds, "discoveries"=discoveries)
   return(ret)
 }
 
-get_thresh_with_rate <- function(max.perm, segment.bounds,  
+get_thresh_with_rate <- function(max.perm, segment.bounds,
                                  lambda, zmin, np=4){
   s <- length(zmin)
   K <- nrow(segment.bounds)
@@ -61,7 +61,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
   if(s==2){
     nbp <- cbind(segment.bounds$nbp, segment.bounds$nbp)
   }else{
-    nbp <- matrix(segment.bounds$nbp, nrow=K) 
+    nbp <- matrix(segment.bounds$nbp, nrow=K)
   }
   lambda.pb <- lambda/sum(nbp)
   while(any(max.lambda.pb < lambda.pb & max.lambda.pb > 0)){
