@@ -26,9 +26,10 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
-
+  stopifnot(sum(obj$max1$lambda <= lam.target)==sum(obj$max$fdr <= target.fdr))
+  segs <- unique(obj$max1$name[obj$max1$fdr <= target.fdr])
   tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds,
-                                    lam.target, obj$zmin, np=2)
+                                    lam.target, obj$zmin, np=2, segs=segs)
   thresholds$thresh.pos <- tt[,1]
   if(s==1) thresholds$thresh.neg <- -tt[,1]
   else thresholds$thresh.neg <- tt[,2]
@@ -46,7 +47,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
 }
 
 get_thresh_with_rate <- function(max.perm, segment.bounds,
-                                 lambda, zmin, np=4){
+                                 lambda, zmin, np=2, segs=NULL){
   s <- length(zmin)
   K <- nrow(segment.bounds)
   stopifnot("name" %in% names(segment.bounds))
@@ -64,33 +65,41 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
     nbp <- matrix(segment.bounds$nbp, nrow=K)
   }
   lambda.pb <- lambda/sum(nbp)
-  while(any(max.lambda.pb < lambda.pb & max.lambda.pb > 0)){
+  #Some segments have a maximum rate of false discoveries that is 
+  # less than the target rate. In these segments we can set the 
+  # threshold to zmin and allow a little more false discoveries
+  # in all the other segments.
+  # Here we remove the segments with low max.lambda.pb
+  # and adjust the total lambda accordingly
+  while(any(max.lambda.pb < lambda.pb)){
     ix <- which(max.lambda.pb < lambda.pb)
     thresh[ix] <- zmin.mat[ix]
     lambda <- lambda - sum(max.lambda.pb[ix]*nbp[ix])
     nbp[ix] <- 0
-    max.lambda.pb[ix] <- -1
+    max.lambda.pb[ix] <- Inf
     lambda.pb <- lambda/sum(nbp)
   }
   #Positive/All if s==1
   ix <- which(nbp[,1] > 0)
-  segs <- segment.bounds$name[ix]
-  zpos <- sapply(segs, FUN=function(k){
+  keep.segs <- segment.bounds$name[ix]
+  if(!is.null(segs)) keep.segs <- intersect(keep.segs, segs)
+  zpos <- sapply(keep.segs, FUN=function(k){
     m <- max.perm[max.perm$name==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
     fret:::get_thresh_with_rate1(m, lambda.pb, np=np)
   })
-  thresh[ix, 1] <- zpos
+  thresh[match(keep.segs, segment.bounds$name), 1] <- zpos
   if(s==1) return(thresh)
 
   ix <- which(nbp[,2] > 0)
-  segs <- segment.bounds$name[ix]
-  zneg <- sapply(segs, FUN=function(k){
+  keep.segs <- segment.bounds$name[ix]
+  if(!is.null(segs)) keep.segs <- intersect(keep.segs, segs)
+  zneg <- sapply(keep.segs, FUN=function(k){
     m <- max.perm[max.perm$name==k & max.perm$mx < 0, c("mx", "lambda_perbase")]
     m$mx <- -1*m$mx
     m <- m[dim(m)[1]:1, ]
     get_thresh_with_rate1(m, lambda.pb, np=np)
   })
-  thresh[ix,2] <- -1*zneg
+  thresh[match(keep.segs, segment.bounds$name),2] <- -1*zneg
   return(thresh)
 }
 
