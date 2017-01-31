@@ -26,7 +26,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
-  stopifnot(sum(obj$max1$lambda <= lam.target)==sum(obj$max$fdr <= target.fdr))
+  stopifnot(sum(obj$max1$lambda <= lam.target)==sum(obj$max1$fdr <= target.fdr))
   segs <- unique(obj$max1$name[obj$max1$fdr <= target.fdr])
   tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds,
                                     lam.target, obj$zmin, np=2, segs=segs)
@@ -35,9 +35,10 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   else thresholds$thresh.neg <- tt[,2]
 
   for(j in 1:K) thresholds$num.disc[j] <- sum(obj$max1$name[1:tot.disc]==obj$segment.bounds$name[j])
+
   thresholds$name <- obj$segment.bounds$name
   ix <- which(thresholds$num.disc > 0)
-  thresholds$chrom[ix] <- obj$max1$chr[match(ix, obj$max1$segment)]
+  thresholds$chrom[ix] <- obj$max1$chr[match(thresholds$name[ix], obj$max1$name)]
   if(is.null(stats.files)) return(thresholds)
   cat("Thresholds found. Retrieving discoveries.\n")
   thresholds$file[ix] <- stats.files[match(thresholds$chrom[ix], stats.files[,1]), 2]
@@ -65,8 +66,8 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
     nbp <- matrix(segment.bounds$nbp, nrow=K)
   }
   lambda.pb <- lambda/sum(nbp)
-  #Some segments have a maximum rate of false discoveries that is 
-  # less than the target rate. In these segments we can set the 
+  #Some segments have a maximum rate of false discoveries that is
+  # less than the target rate. In these segments we can set the
   # threshold to zmin and allow a little more false discoveries
   # in all the other segments.
   # Here we remove the segments with low max.lambda.pb
