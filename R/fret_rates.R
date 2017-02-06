@@ -11,6 +11,8 @@ fret_rates <- function(file.list, fdr.max=0.8){
   max1 <- R$m1
   max.perm <- R$mperm
   zmin <- R$zmin
+  s <- length(zmin)
+  stopifnot(s %in% c(1, 2))
   R$seg.bounds$name <- paste0(R$seg.bounds$chr, ".", 1:nrow(R$seg.bounds))
   segment.bounds <- R$seg.bounds
   n.perm <- R$n.perm
@@ -28,10 +30,6 @@ fret_rates <- function(file.list, fdr.max=0.8){
   max1$name <- paste0(max1$chr, ".", max1$segment)
   max.perm$name <- paste0(max.perm$chr, ".", max.perm$segment)
 
-
-  #Check inputs
-  s <- length(zmin)
-  stopifnot(s %in% c(1, 2))
 
   K <- nrow(segment.bounds)
   cat("There are ", K, " segments total.\n")
