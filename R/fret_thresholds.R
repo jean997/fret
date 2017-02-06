@@ -29,7 +29,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   stopifnot(sum(obj$max1$lambda <= lam.target)==sum(obj$max1$fdr <= target.fdr))
   segs <- unique(obj$max1$name[obj$max1$fdr <= target.fdr])
   tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds,
-                                    lam.target, obj$zmin, np=2, segs=segs)
+                                    lam.target, obj$zmin, np=4, segs=segs)
   thresholds$thresh.pos <- tt[,1]
   if(s==1) thresholds$thresh.neg <- -tt[,1]
   else thresholds$thresh.neg <- tt[,2]
