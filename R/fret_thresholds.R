@@ -105,13 +105,19 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
 }
 
 #Given a per-base fdr, what threshold corresponds?
-get_thresh_with_rate1 <- function(ll, rate, np=4){
+old_get_thresh_with_rate1 <- function(ll, rate, np=4){
   if(rate < min(ll[,2])){
     ff <- lm(ll[1:np, 1]~log10(ll[1:np, 2]))
     return(ff$coefficients[2]*log10(rate) + ff$coefficients[1])
   }
   return(approx(y=ll[,1], x=log10(ll[,2]),
                 xout=log10(rate), yright=min(ll[,1]))$y)
+}
+
+get_thresh_with_rate1 <- function(ll, rate, np=4){
+  ix <- order(abs(rate-ll[,2]))[1:np]
+  ff <- lm(ll[ix, 1]~log10(ll[ix, 2]))
+  return(ff$coefficients[2]*log10(rate) + ff$coefficients[1])
 }
 
 get_discoveries <- function(max1, thresholds){

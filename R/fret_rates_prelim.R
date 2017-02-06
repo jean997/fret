@@ -14,8 +14,7 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
     stopifnot("seg.bounds" %in% names(fret.obj))
     segment.bounds <- fret.obj$seg.bounds
   }
-  stopifnot(ncol(segment.bounds)==3)
-  stopifnot(names(segment.bounds)==c("chr", "start", "stop"))
+  stopifnot(all(c("chr", "start", "stop") %in% names(segment.bounds)))
   s <- length(fret.obj$zmin)
   stopifnot(s %in% c(1, 2))
   K <- nrow(segment.bounds)
@@ -73,11 +72,12 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
     oinv <- match(1:length(m), o)
     ll <- fret:::lamtab(mx=m, zmin=fret.obj$zmin, nbp = segment.bounds$nbp[i], n.perm=fret.obj$n.perm)
     fret.obj$mperm$lambda_perbase[perm.ix] <- ll[,2][oinv]
+    #Find maximum possible lambda value (i.e. rate at zmin)
     if(s==1){
-      segment.bounds[i, mlp_ix] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=2)
+      segment.bounds$max_lambda_perbase[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=4)
     }else{
-      segment.bounds[i, mlp_ix[1]] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=2)
-      segment.bounds[i, mlp_ix[2]] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=2)
+      segment.bounds$max_lambda_perbase_pos[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=4)
+      segment.bounds$max_lambda_perbase_neg[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=4)
     }
     fret.obj$mperm[perm.ix, ] <- fret.obj$mperm[perm.ix,][o,]
     if(nsegs1[i] > 0){
@@ -104,19 +104,17 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
 # in the first column of ll then we estimate the rate by fitting a line and projecting.
 #np controls how many points to use when fitting the line.
 get_rate_with_thresh <- function(ll, thresh, np=4){
-  if(sum(ll[,1] < 0) < 2 & thresh < 0) return(0)
-  if(sum(ll[,1] > 0) < 2 & thresh > 0) return(0)
-  if(thresh > max(ll[,1])){
-    ff <- lm(log10(ll[1:np, 2])~ ll[1:np, 1])
-    return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
-  }else if(thresh < min(ll[,1]) & thresh < 0){
-    n <- nrow(ll)
-    ff <- lm(log10(ll[(n-np+1):n, 2])~ ll[(n-np+1):n, 1])
+  #For signed threshold, if fewer than np permutation peaks
+    # have sign matching the sign of threshold
+  sgn <- sign(ll[,1])
+  if(sum(sgn==sign(thresh)) < np){
+    if(sum(sgn==sign(thresh)) < 2) return(0)
+    ll <- ll[sgn==sign(thresh),]
+    ff <- lm(log10(ll[,2])~ ll[, 1])
     return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
   }
-  sgn <- sign(thresh)
-  ix <- which(sign(ll[,1])==sgn)
-
-  return(10^(approx(x=abs(ll[ix,1]), y=log10(ll[ix,2]),
-                    xout=abs(thresh),  rule=2:1)$y))
+  ll <- ll[sgn==sign(thresh),]
+  ix <- order(abs(thresh-ll[,1]))[1:np]
+  ff <- lm(log10(ll[ix, 2])~ll[ix, 1])
+  return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
 }
