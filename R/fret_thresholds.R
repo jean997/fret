@@ -40,6 +40,9 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   ix <- which(thresholds$num.disc > 0)
   thresholds$chrom[ix] <- obj$max1$chr[match(thresholds$name[ix], obj$max1$name)]
   if(is.null(stats.files)) return(thresholds)
+  fl <- tempfile(pattern=paste0("thresh", target.fdr), tmpdir=".")
+  cat("temporary file: ", fl, "\n")
+  save(thresholds, file=fl)
   cat("Thresholds found. Retrieving discoveries.\n")
   thresholds$file[ix] <- stats.files[match(thresholds$chrom[ix], stats.files[,1]), 2]
   discoveries <- get_discoveries(max1=obj$max1[1:tot.disc,], thresholds = thresholds)
