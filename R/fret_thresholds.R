@@ -23,10 +23,10 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   names(thresholds) <- c("num.disc", "thresh.pos", "thresh.neg", "chrom", "file", "name")
   #For each segment record 1) # of discoveries 2) pos threshold 3) neg threshold 4) chromosome 5) file
 
-  tot.disc <- sum(obj$max1$fdr <= target.fdr) ###This is the number of discoveries
+  tot.disc <- max(which(obj$max1$fdr <= target.fdr)) ###This is the number of discoveries
   #We want to draw thresholds with lambda = target.fdr*total num discoveries
   lam.target <- target.fdr*tot.disc
-  stopifnot(sum(obj$max1$lambda <= lam.target)==sum(obj$max1$fdr <= target.fdr))
+  stopifnot(sum(obj$max1$lambda <= lam.target)==tot.disc)
   segs <- unique(obj$max1$name[obj$max1$fdr <= target.fdr])
   tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds,
                                     lam.target, obj$zmin, np=4, segs=segs)
@@ -51,7 +51,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
 }
 
 get_thresh_with_rate <- function(max.perm, segment.bounds,
-                                 lambda, zmin, np=2, segs=NULL){
+                                 lambda, zmin, np=4, segs=NULL){
   s <- length(zmin)
   K <- nrow(segment.bounds)
   stopifnot("name" %in% names(segment.bounds))
