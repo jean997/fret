@@ -113,8 +113,30 @@ get_rate_with_thresh <- function(ll, thresh, np=4){
     ff <- lm(log10(ll[,2])~ ll[, 1])
     return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
   }
+  #If there is enough data we will use the np points that surround the target
   ll <- ll[sgn==sign(thresh),]
-  ix <- order(abs(thresh-ll[,1]))[1:np]
+  ii <- order(c(thresh-ll[,1], 0))
+  N <- nrow(ll) + 1
+  zero_ii <- which(ii==N)
+  if((zero_ii-1) < floor(np/2)){
+    nneg <- zero_ii -1
+    npos <- np-nneg
+  }else if((N-zero_ii) < ceiling(np/2)){
+    npos <- N-zero_ii
+    nneg <- np-npos
+  }else{
+    nneg <- floor(np/2)
+    npos <- ceiling(np/2)
+  }
+  if(nneg == 0){
+    ix <- ii[2:(np+1)]
+  }
+  if(npos==0){
+    ix <- ii[(N-np-1):(N-1)]
+  }else{
+    ix <- ii[(zero_ii -nneg):(zero_ii-1)]
+    ix <- c(ix, ii[(zero_ii + 1):(zero_ii + npos)])
+  }
   ff <- lm(log10(ll[ix, 2])~ll[ix, 1])
   return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
 }
