@@ -48,8 +48,6 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
   fret.obj$mperm$lambda_perbase <- rep(0, nrow(fret.obj$mperm))
   for(i in 1:K){
     if(i %% 10 == 1) cat(i, "..")
-    #m1.ix <- which(max1$segment==i)
-    #perm.ix <- which(max.perm$segment==i)
     #No peaks in data and almost no peaks in permutations
     if(nsegs1[i]==0 & nsegsperm[i] < 2){
       segment.bounds[i, mlp_ix] <- 0
@@ -79,7 +77,7 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
       segment.bounds$max_lambda_perbase_pos[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=4)
       segment.bounds$max_lambda_perbase_neg[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=4)
     }
-    fret.obj$mperm[perm.ix, ] <- fret.obj$mperm[perm.ix,][o,]
+    #fret.obj$mperm[perm.ix, ] <- fret.obj$mperm[perm.ix,][o,]
     if(nsegs1[i] > 0){
       m1.ix <- which(fret.obj$m1$segment==i)
       rts <- sapply(fret.obj$m1$mx[m1.ix], FUN=function(thresh){
@@ -130,8 +128,7 @@ get_rate_with_thresh <- function(ll, thresh, np=4){
   }
   if(nneg == 0){
     ix <- ii[2:(np+1)]
-  }
-  if(npos==0){
+  }else if(npos==0){
     ix <- ii[(N-np-1):(N-1)]
   }else{
     ix <- ii[(zero_ii -nneg):(zero_ii-1)]
