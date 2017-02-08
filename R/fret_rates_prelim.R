@@ -29,12 +29,13 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
   mlp_ix <- grep("max_lambda", names(segment.bounds))
 
   #Match peaks to segments
-
-  fret.obj$m1$segment <- match_segments(chr=fret.obj$m1$chr, pos=fret.obj$m1$pos, segment.bounds = segment.bounds, parallel=parallel)
+  fret.obj$m1$segment <- match_segments(chr=fret.obj$m1$chr, pos=fret.obj$m1$pos,
+                                        segment.bounds = segment.bounds, parallel=parallel)
 
   nsegs1 <- sapply(1:K, FUN=function(i){ sum(fret.obj$m1$segment==i)})
 
-  fret.obj$mperm$segment <- match_segments(chr=fret.obj$mperm$chr, pos=fret.obj$mperm$pos, segment.bounds = segment.bounds, parallel=parallel)
+  fret.obj$mperm$segment <- match_segments(chr=fret.obj$mperm$chr, pos=fret.obj$mperm$pos,
+                                           segment.bounds = segment.bounds, parallel=parallel)
 
   nsegsperm <- sapply(1:K, FUN=function(i){ sum(fret.obj$mperm$segment==i)})
 
@@ -72,16 +73,16 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
     fret.obj$mperm$lambda_perbase[perm.ix] <- ll[,2][oinv]
     #Find maximum possible lambda value (i.e. rate at zmin)
     if(s==1){
-      segment.bounds$max_lambda_perbase[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=4)
+      segment.bounds$max_lambda_perbase[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=10)
     }else{
-      segment.bounds$max_lambda_perbase_pos[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=4)
-      segment.bounds$max_lambda_perbase_neg[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=4)
+      segment.bounds$max_lambda_perbase_pos[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=10)
+      segment.bounds$max_lambda_perbase_neg[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=10)
     }
     #fret.obj$mperm[perm.ix, ] <- fret.obj$mperm[perm.ix,][o,]
     if(nsegs1[i] > 0){
       m1.ix <- which(fret.obj$m1$segment==i)
       rts <- sapply(fret.obj$m1$mx[m1.ix], FUN=function(thresh){
-          fret:::get_rate_with_thresh(ll, thresh)
+          fret:::get_rate_with_thresh(ll, thresh, np=10)
       })
       fret.obj$m1$lambda_perbase[m1.ix] <- rts
     }
@@ -101,7 +102,7 @@ fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
 #np If thresh is larger than the largest threshold or smaller than the smallest threshold
 # in the first column of ll then we estimate the rate by fitting a line and projecting.
 #np controls how many points to use when fitting the line.
-get_rate_with_thresh <- function(ll, thresh, np=4){
+get_rate_with_thresh <- function(ll, thresh, np=10){
   #For signed threshold, if fewer than np permutation peaks
     # have sign matching the sign of threshold
   sgn <- sign(ll[,1])
@@ -129,7 +130,7 @@ get_rate_with_thresh <- function(ll, thresh, np=4){
   if(nneg == 0){
     ix <- ii[2:(np+1)]
   }else if(npos==0){
-    ix <- ii[(N-np-1):(N-1)]
+    ix <- ii[(N-np):(N-1)]
   }else{
     ix <- ii[(zero_ii -nneg):(zero_ii-1)]
     ix <- c(ix, ii[(zero_ii + 1):(zero_ii + npos)])

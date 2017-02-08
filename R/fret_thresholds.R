@@ -29,7 +29,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
   stopifnot(sum(obj$max1$lambda <= lam.target)==tot.disc)
   segs <- unique(obj$max1$name[1:tot.disc])
   tt <- fret:::get_thresh_with_rate(obj$max.perm, obj$segment.bounds,
-                                    lam.target, obj$zmin, np=4, segs=segs)
+                                    lam.target, obj$zmin, np=10, segs=segs)
   thresholds$thresh.pos <- tt[,1]
   if(s==1) thresholds$thresh.neg <- -tt[,1]
   else thresholds$thresh.neg <- tt[,2]
@@ -51,7 +51,7 @@ fret_thresholds <- function(obj, target.fdr, stats.files){
 }
 
 get_thresh_with_rate <- function(max.perm, segment.bounds,
-                                 lambda, zmin, np=4, segs=NULL){
+                                 lambda, zmin, np=10, segs=NULL){
   s <- length(zmin)
   K <- nrow(segment.bounds)
   stopifnot("name" %in% names(segment.bounds))
@@ -107,18 +107,9 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
 }
 
 #Given a per-base fdr, what threshold corresponds?
-old_get_thresh_with_rate1 <- function(ll, rate, np=4){
-  if(rate < min(ll[,2])){
-    ff <- lm(ll[1:np, 1]~log10(ll[1:np, 2]))
-    return(ff$coefficients[2]*log10(rate) + ff$coefficients[1])
-  }
-  return(approx(y=ll[,1], x=log10(ll[,2]),
-                xout=log10(rate), yright=min(ll[,1]))$y)
-}
-
 #This function assumes all peaks are positive (transform to get negative
   #thresholds)
-get_thresh_with_rate1 <- function(ll, rate, np=4){
+get_thresh_with_rate1 <- function(ll, rate, np=10){
   ii <- order(c(rate-ll[,2], 0))
   N <- nrow(ll) + 1
   zero_ii <- which(ii==N)
@@ -135,7 +126,7 @@ get_thresh_with_rate1 <- function(ll, rate, np=4){
   if(nneg == 0){
     ix <- ii[2:(np+1)]
   }else if(npos==0){
-    ix <- ii[(N-np-1):(N-1)]
+    ix <- ii[(N-np):(N-1)]
   }else{
     ix <- ii[(zero_ii -nneg):(zero_ii-1)]
     ix <- c(ix, ii[(zero_ii + 1):(zero_ii + npos)])
