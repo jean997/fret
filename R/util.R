@@ -92,3 +92,33 @@ lamtab <- function(mx, zmin, nbp, n.perm){
     return(cbind(mx,  ct/(n.perm*nbp)))
   }
 }
+
+
+match_segments <- function(chr, pos, segment.bounds,
+                           parallel=FALSE, cores=parallel::detectCores()-1){
+  chroms <- unique(chr)
+  ix <- rep(NA, length(chr))
+  if(parallel){
+    cl <- makeCluster(cores, type="FORK")
+    on.exit(stopCluster(cl))
+  }
+  for(c in chroms){
+    cat(c, "..")
+    ix_dat <- which(chr==c)
+    ix_sb <- which(segment.bounds$chr==c)
+    stopifnot(all(pos[ix_dat] <= max(segment.bounds$stop[ix_sb])))
+    if(parallel){
+      slocal <- parSapply(cl, pos[ix_dat], FUN=function(p){
+        which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
+      })
+    }else{
+      slocal <- sapply(pos[ix_dat], FUN=function(p){
+        which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
+      })
+    }
+    stopifnot(all(pos[ix_dat]) <= segment.bounds$stop[slocal])
+    stopifnot(length(ix[ix_dat])== length(ix_sb[slocal]))
+    ix[ix_dat] <- ix_sb[slocal]
+  }
+  return(ix)
+}
