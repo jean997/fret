@@ -156,13 +156,13 @@ get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
     rr <- sapply(t, FUN=function(thresh){
       fret:::get_rate_with_thresh(ll, thresh, np=10)
     })
-  }else{ 
+  }else{
     n <- 2
     done <- FALSE
     while(!done){
       ii <- order(c(rate-ll[,2], 0))
       N <- nrow(ll) + 1
-      zero_ii <- which(ii==N) 
+      zero_ii <- which(ii==N)
       left <- ii[max(1, zero_ii-n)]
       right <- ii[min(zero_ii + n, N)] #Note that zero_ii cannot be equal to N
                                       #This would be a rate larger than any in ll
