@@ -88,7 +88,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
   if(!is.null(segs)) keep.segs <- intersect(keep.segs, segs)
   zpos <- sapply(keep.segs, FUN=function(k){
     m <- max.perm[max.perm$name==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
-    th <- fret:::get_thresh_with_rate1(m, lambda.pb, np=np)
+    th <- get_thresh_with_rate1(m, lambda.pb, np=np)
     if(th$warn ==1) cat(k, "\n")
     th$thresh
   })
@@ -149,7 +149,7 @@ project_thresh_with_rate1 <- function(ll, rate, np=10){
 get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
   t1 <- project_thresh_with_rate1(ll, rate, np=np)
   r1 <- get_rate_with_thresh(ll, t1, np=np)
-  if(abs(log10(r1)-log10(rate)) < tol) return(t1)
+  if(abs(log10(r1)-log10(rate)) < tol) return(list("thresh"=t1, "warn"=0))
   if(rate < ll[1,2]){ #Rate is smaller than any rate in ll
     d <- t1-ll[1,1]
     t <- seq(ll[2,1], t1 + (d/2), length.out=1000)
