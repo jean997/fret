@@ -89,7 +89,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
   zpos <- sapply(keep.segs, FUN=function(k){
     m <- max.perm[max.perm$name==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
     th <- get_thresh_with_rate1(m, lambda.pb, np=np)
-    cat(k, "\n")
+    if(th$warn ==1) cat(k, "\n")
     th$thresh
   })
   thresh[match(keep.segs, segment.bounds$name), 1] <- zpos
