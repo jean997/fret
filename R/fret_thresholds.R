@@ -153,19 +153,27 @@ get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
   if(rate < ll[1,2]){ #Rate is smaller than any rate in ll
     d <- t1-ll[1,1]
     t <- seq(ll[2,1], t1 + (d/2), length.out=1000)
-  }else if (rate < ll[2,2]){
-    t <- seq(ll[3,1], ll[1,1], length.out=1000)
-  }else{
-    ii <- order(c(rate-ll[,2], 0))
-    N <- nrow(ll) + 1
-    zero_ii <- which(ii==N)
-    left <- ii[max(1, zero_ii-2)]
-    right <- ii[zero_ii + 2]
-    t <- seq(ll[left, 1], ll[right, 1], length.out=1000)
+    rr <- sapply(t, FUN=function(thresh){
+      fret:::get_rate_with_thresh(ll, thresh, np=10)
+    })
+  }else{ 
+    n <- 2
+    done <- FALSE
+    while(!done){
+      ii <- order(c(rate-ll[,2], 0))
+      N <- nrow(ll) + 1
+      zero_ii <- which(ii==N) #Note that zero_ii cannot be equal to 1
+                              #This would be a rate larger than any in ll
+      left <- ii[max(1, zero_ii-n)]
+      right <- ii[min(zero_ii + n, N)]
+      t <- seq(ll[left, 1], ll[right, 1], length.out=1000)
+      rr <- sapply(t, FUN=function(thresh){
+        fret:::get_rate_with_thresh(ll, thresh, np=10)
+      })
+      if(min(rr) < rate & max(rr) > rate) done <- 1
+      n <- n+1
+    }
   }
-  rr <- sapply(t, FUN=function(thresh){
-    fret:::get_rate_with_thresh(ll, thresh, np=10)
-  })
   t2 <- approx(x=log10(rr), y=t, xout=log10(rate))$y
   r2 <- fret:::get_rate_with_thresh(ll, t2, np=np)
   warn <- 0
