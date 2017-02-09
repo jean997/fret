@@ -109,7 +109,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
 #Given a per-base fdr, what threshold corresponds?
 #This function assumes all peaks are positive (transform to get negative
   #thresholds)
-get_thresh_with_rate1 <- function(ll, rate, np=10){
+project_thresh_with_rate1 <- function(ll, rate, np=10){
   ii <- order(c(rate-ll[,2], 0))
   N <- nrow(ll) + 1
   zero_ii <- which(ii==N)
@@ -122,7 +122,7 @@ get_thresh_with_rate1 <- function(ll, rate, np=10){
   }else{
     nneg <- floor(np/2)
     npos <- ceiling(np/2)
-  } 
+  }
   if(nneg == 0){
     ix <- ii[2:(np+1)]
   }else if(npos==0){
@@ -140,6 +140,34 @@ get_thresh_with_rate1 <- function(ll, rate, np=10){
   return(slope*log10(rate) + b)
 }
 
+#Want to just invert get_rate_with_thresh
+#Note that ll is sorted so that ll[,1] decresases and ll[,2] increases
+get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
+  t1 <- project_thresh_with_rate1(ll, rate, np=np)
+  r1 <- get_rate_with_thresh(ll, t1, np=np)
+  if(abs(log10(r1)-log10(rate)) < tol) return(t1)
+  if(rate < ll[1,2]){ #Rate is smaller than any rate in ll
+    d <- t1-ll[1,1]
+    t <- seq(ll[2,1], t1 + (d/2), length.out=1000)
+  }else if (rate < ll[2,2]){
+    t <- seq(ll[3,1], ll[1,1], length.out=1000)
+  }else{
+    ii <- order(c(rate-ll[,2], 0))
+    N <- nrow(ll) + 1
+    zero_ii <- which(ii==N)
+    left <- ii[max(1, zero_ii-2)]
+    right <- ii[zero_ii + 2]
+    t <- seq(ll[left, 1], ll[right, 1], length.out=1000)
+  }
+  rr <- sapply(t, FUN=function(thresh){
+    fret:::get_rate_with_thresh(ll, thresh, np=10)
+  })
+  t2 <- approx(x=log10(rr), y=t, xout=log10(rate))$y
+  r2 <- get_rate_with_thresh(ll, t2, np=np)
+  if(!abs(log10(r1)-log10(rate)) < tol) cat("Warning: threshold may be inacurate\n")
+  return(t2)
+}
+
 get_discoveries <- function(max1, thresholds){
   discoveries <- matrix(nrow=nrow(max1), ncol=3)
   ix <- which(thresholds$num.disc > 0)
@@ -147,7 +175,7 @@ get_discoveries <- function(max1, thresholds){
   max1$tpos <- thresholds$thresh.pos[match(max1$name, thresholds$name)]
   max1$tneg <- thresholds$thresh.neg[match(max1$name, thresholds$name)]
   if(any(is.na(max1$tpos)) | any(is.na(max1$tneg))) stop("Error in get_discoveries.1.\n")
-  if(any(max1$tpos[max1$mx > 0] > max1$mx[max1$mx > 0]) | 
+  if(any(max1$tpos[max1$mx > 0] > max1$mx[max1$mx > 0]) |
             any(max1$tpos[max1$mx < 0] < max1$mx[max1$mx < 0])){
     stop("Error in get_discoveries.2.\n")
    }
