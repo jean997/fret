@@ -89,7 +89,7 @@ get_thresh_with_rate <- function(max.perm, segment.bounds,
   zpos <- sapply(keep.segs, FUN=function(k){
     m <- max.perm[max.perm$name==k & max.perm$mx > 0, c("mx", "lambda_perbase")]
     th <- get_thresh_with_rate1(m, lambda.pb, np=np)
-    if(th$warn ==1) cat(k, "\n")
+    cat(k, "\n")
     th$thresh
   })
   thresh[match(keep.segs, segment.bounds$name), 1] <- zpos
@@ -167,10 +167,10 @@ get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
     fret:::get_rate_with_thresh(ll, thresh, np=10)
   })
   t2 <- approx(x=log10(rr), y=t, xout=log10(rate))$y
-  r2 <- get_rate_with_thresh(ll, t2, np=np)
+  r2 <- fret:::get_rate_with_thresh(ll, t2, np=np)
   warn <- 0
-  if(!abs(log10(r1)-log10(rate)) < tol){
-    cat("Warning: threshold may be inacurate; ", abs(log10(r1)-log10(rate)) , "\n")
+  if(!abs(log10(r2)-log10(rate)) < tol){
+    cat("Warning: threshold may be inacurate; ", abs(log10(r2)-log10(rate)) , "\n")
     warn <- 1
   }
   return(list("thresh"=t2, "warn"=warn))
