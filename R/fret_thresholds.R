@@ -147,8 +147,8 @@ project_thresh_with_rate1 <- function(ll, rate, np=10){
 #Want to just invert get_rate_with_thresh
 #Note that ll is sorted so that ll[,1] decresases and ll[,2] increases
 get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
-  t1 <- project_thresh_with_rate1(ll, rate, np=np)
-  r1 <- get_rate_with_thresh(ll, t1, np=np)
+  t1 <- fret:::project_thresh_with_rate1(ll, rate, np=np)
+  r1 <- fret:::get_rate_with_thresh(ll, t1, np=np)
   if(abs(log10(r1)-log10(rate)) < tol) return(list("thresh"=t1, "warn"=0))
   if(rate < ll[1,2]){ #Rate is smaller than any rate in ll
     d <- t1-ll[1,1]
@@ -162,10 +162,10 @@ get_thresh_with_rate1 <- function(ll, rate, np=10, tol=1e-13){
     while(!done){
       ii <- order(c(rate-ll[,2], 0))
       N <- nrow(ll) + 1
-      zero_ii <- which(ii==N) #Note that zero_ii cannot be equal to 1
-                              #This would be a rate larger than any in ll
+      zero_ii <- which(ii==N) 
       left <- ii[max(1, zero_ii-n)]
-      right <- ii[min(zero_ii + n, N)]
+      right <- ii[min(zero_ii + n, N)] #Note that zero_ii cannot be equal to N
+                                      #This would be a rate larger than any in ll
       t <- seq(ll[left, 1], ll[right, 1], length.out=1000)
       rr <- sapply(t, FUN=function(thresh){
         fret:::get_rate_with_thresh(ll, thresh, np=10)
