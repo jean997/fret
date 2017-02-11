@@ -65,6 +65,7 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
   #Four collumns for each stat: beta, se, stat, p-value
 	cat("Running Poisson, Huber, and t-tests.\n")
   res <- apply(dat.collapsed, MARGIN=1, FUN=function(y){
+    cat(y, "\n")
     sum0 = sum(y[x==0])
     sum1 = sum(y[x==1])
     c(huber_reg(y, x), pois_reg(y, x), tt(y, x), sum0, sum1)
