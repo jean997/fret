@@ -1,7 +1,7 @@
 #'@import wavethresh
 
 
-#'Run waveQTL
+#'@title Run waveQTL
 #'@description Runs the method of Shim and Stephens 2014
 #'@param dat matrix or data frame of data. First column should be position.
 #' second column should be window number, the rest should be data.
@@ -10,7 +10,7 @@
 #'@param names Names column in pheno.file
 #'@return A list
 #'@export
-run_waveQTL <- function(dat, x, 
+run_waveQTL <- function(dat, x,
                         waveQTL_loc="~/WaveQTL-master/bin/WaveQTL"){
 
   #waveQTL needs to output a lot of data -- N will be the label for these files

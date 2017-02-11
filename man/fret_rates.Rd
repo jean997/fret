@@ -4,14 +4,12 @@
 \alias{fret_rates}
 \title{Calculate lambda and fdr for each peak}
 \usage{
-fret_rates(file.list, fdr.max = 0.8, temp.dir = ".", write.temp = FALSE)
+fret_rates(file.list, fdr.max = 0.8)
 }
 \arguments{
 \item{file.list}{List of files with output from fret_rates_prelim}
 
 \item{fdr.max}{Maximum fdr to keep data for}
-
-\item{n.perm}{Number of permutations}
 }
 \value{
 An object that can be passed to fret_thresholds

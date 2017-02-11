@@ -28,3 +28,6 @@ Collate:
     'maxes_1seg.R'
     'stats.R'
     'util.R'
+    'WaveQTL_preprocess_funcs.R'
+    'dnase1_test_windows.R'
+    'run_waveQTL.R'

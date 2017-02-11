@@ -1,5 +1,5 @@
 ## `WaveQTL_preprocess_funcs.R' contains functions to preprocess functional data for WaveQTL
-## software. 
+## software.
 ## Copyright (C) 2014 Heejung Shim
 ##
 ## This program is free software: you can redistribute it and/or modify
@@ -16,9 +16,6 @@
 ## along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-require("wavethresh")
-
-
 ##' Filter low count WCs.
 ##'
 ##'
@@ -26,15 +23,15 @@ require("wavethresh")
 ##' low counts. This function considers WCs as low count if the total
 ##' counts used in their computation were less than or equal to `meanR.thresh'
 ##' per individual on average.
-##' @param Data matrix (or a vector when N = 1) with N (# of samples) by T (# of bps in a region); This matrix contains original data before a wavelet transform; Here, T should be a power of 2.  
+##' @param Data matrix (or a vector when N = 1) with N (# of samples) by T (# of bps in a region); This matrix contains original data before a wavelet transform; Here, T should be a power of 2.
 ##' @param meanR.thresh If average reads across individuals <= meanR.thresh,
 ##' those WCs are filtered out.
-##' @return filtered.WCs a vector of length T; t-th element indicates whether t-th WC in output from the function \code{\link{FWT}} is filtered (0) or not (1). 
+##' @return filtered.WCs a vector of length T; t-th element indicates whether t-th WC in output from the function \code{\link{FWT}} is filtered (0) or not (1).
 fiter.WCs <- function(Data, meanR.thresh){
 
         if(is.vector(Data)){
             dim(Data) <- c(1, length(Data))
-        }        
+        }
   	numWCs = dim(Data)[2]
   	J = log2(numWCs)
 
@@ -91,7 +88,7 @@ FWT <- function(Data, filter.number=1, family="DaubExPhase"){
 
         if(is.vector(Data)){
             dim(Data) <- c(1, length(Data))
-        }    
+        }
   	T = dim(Data)[2]
   	J = log2(T)
   	N = dim(Data)[1]
@@ -102,7 +99,7 @@ FWT <- function(Data, filter.number=1, family="DaubExPhase"){
 	dat_W = matrix(data=NA, nr = N, nc = T)
 
 	for(j in 1:N){
-		each_WT	= wd(Data[j,], filter.number=filter.number ,family=family) 
+		each_WT	= wd(Data[j,], filter.number=filter.number ,family=family)
 		dat_D[j,] = each_WT$D
 		dat_C[j] = each_WT$C[length(each_WT$C)]
 	}
@@ -127,7 +124,7 @@ FWT <- function(Data, filter.number=1, family="DaubExPhase"){
 
 
 
-##' Quantile-transform data to a standard normal distribution. 
+##' Quantile-transform data to a standard normal distribution.
 ##'
 ##'
 ##' This function quantile-transforms data to a standard normal distribution. It randomly assign
@@ -143,19 +140,19 @@ QT_randomTie <- function(x) {
 
 ##' Correct for covariates.
 ##'
-##' 
+##'
 ##' This function corrects for covariates.
-##' @param x a vector of length N (# of samples) containing data. 
+##' @param x a vector of length N (# of samples) containing data.
 ##' @param Covariates a matrix (or a vector if M = 1) with N by M (# of covariates)
 ##' containing covariates to correct for.
-##' @return a vector of length N; covariates corrected data. 
+##' @return a vector of length N; covariates corrected data.
 corrected_forCovariates <- function(x, Covariates){
 	return(lm(x~Covariates)$residuals)
 }
 
 
 
-##' Normalize WCs. 
+##' Normalize WCs.
 ##'
 ##'
 ##' This function quantile-transforms WCs to a standard normal distribution.
@@ -172,7 +169,7 @@ Normalize.WCs <- function(WCs, Covariates=NULL){
 	# QT to a standard normal distribution
 	QT_dat = apply(WCs, 2, QT_randomTie)
 
-	# correct for covariates and QT to a standard normal distribution. 
+	# correct for covariates and QT to a standard normal distribution.
 	if(!is.null(Covariates)){
 		corrected_QT.dat = apply(QT_dat, 2, corrected_forCovariates, Covariates)
 		QT_dat = apply(corrected_QT.dat, 2, QT_randomTie)
@@ -184,7 +181,7 @@ Normalize.WCs <- function(WCs, Covariates=NULL){
 
 
 
-##' Generate Group information.  
+##' Generate Group information.
 ##'
 ##'
 ##' This function generates information on which WCs share hyperparameter \pi
@@ -192,15 +189,15 @@ Normalize.WCs <- function(WCs, Covariates=NULL){
 ##' as an input in WaveQTL software. As default (group.scale=NULL), the function
 ##' outputs group information indicating that WCs in the same scale share \pi.
 ##' To put WCs from multiple scales (only for consecutive scales) in the same group,
-##' instruction should be provided in group.scale (see below for details). 
-##' @param numWCs a positive number; power of 2; total number of WCs. 
+##' instruction should be provided in group.scale (see below for details).
+##' @param numWCs a positive number; power of 2; total number of WCs.
 ##' @param group.scale default = NULL; a vector of nonnegative numbers; length of
 ##' the vector is the number of groups; i-th element in the vector indicates
 ##' the first scale of WCs for i-th group; Suppose group.scale = c(0, 1, 4, 5)
 ##' and numWCs = 1024. Then, there are four groups. The first group contains WC in
 ##' the 0-th scale. The second group consists of WCs from the 1st to 3rd scales.
 ##' WCs in the 4th scale are in the third group and WCs from the 5th
-##' to the last (10th) scales are in the fourth group. 
+##' to the last (10th) scales are in the fourth group.
 ##' @return group a vector of positive numbers; length of the vector is the number
 ##' of groups; i-th element in the vector indicates the start position of WCs for i-th
 ##' group from a list of all WCs; Suppose group = c(1, 2, 9, 17) which can be obtained
@@ -208,11 +205,11 @@ Normalize.WCs <- function(WCs, Covariates=NULL){
 ##' four groups of WCs. The first group has one WC that is in the first position from
 ##' the list of all WCs. The second group has 7 WCs that locate from the second position
 ##' to 8th position. WCs from 9th to 16th positions are in the third group and WCs
-##' from 17th to the end (1024th) positions are in the fourth group. 
+##' from 17th to the end (1024th) positions are in the fourth group.
 generate_Group <- function(numWCs, group.scale=NULL){
-    
+
     J = log(numWCs, 2)
-    
+
     if(is.null(group.scale)){
         group.scale = 0:J
     }
@@ -225,7 +222,7 @@ generate_Group <- function(numWCs, group.scale=NULL){
 
 
 
-##' Preprocess functional data for a WaveQTL software. 
+##' Preprocess functional data for a WaveQTL software.
 ##'
 ##'
 ##' This function preprocesses functional data for a wavelet-based approach
@@ -245,7 +242,7 @@ generate_Group <- function(numWCs, group.scale=NULL){
 ##' In addition to wavelet transform, this function filters out some WCs
 ##' that are computed based on very low counts. The function considers WCs
 ##' as low count if the total counts used in their computation were less than
-##' or equal to `meanR.thresh' per individual on average. 
+##' or equal to `meanR.thresh' per individual on average.
 ##' @param Data matrix (or a vector when N = 1) with N (# of samples) by T (# of bps in a region);
 ##' This matrix contains original functional data to be decomposed;
 ##' Here, T should be a power of 2.
@@ -261,7 +258,7 @@ generate_Group <- function(numWCs, group.scale=NULL){
 ##' in the R package \code{\link{wavethresh}}; See their manual for details.
 ##' @param no.QT TRUE or FALSE; default=FALSE; if no.QT == FALSE, perform quantile transform during normalization (often for testing); if no.QT == TRUE, just correct WCs for covariates (often for effect size estimation).
 ##'
-##' 
+##'
 ##' @return WCs a matrix with N (# of samples) by T (# of bps in a region); n-th row contains WCs
 ##' for n-th sample; WCs are ordered from low resolution WC to high resolution WC; For example,
 ##' with a Haar wavelet transform, the first column contains WC (precisely speaking, scaling
@@ -269,10 +266,10 @@ generate_Group <- function(numWCs, group.scale=NULL){
 ##' that contrasts the data in the first half vs second half of the region. The last column
 ##' contains WC that contrasts the data in the (T-1)-th bp vs T-th bp.
 ##' @return filtered.WCs a vector of length T; t-th element indicates
-##' whether t-th WC in output (WCs) filtered (0) or not (1). 
+##' whether t-th WC in output (WCs) filtered (0) or not (1).
 WaveQTL_preprocess <- function(Data, library.read.depth = NULL, Covariates = NULL, meanR.thresh = 2, no.QT = FALSE, filter.number=1, family="DaubExPhase"){
 
-    
+
 	if(is.vector(Data)){dim(Data)<- c(1,length(Data))} #change Data to matrix
   	if(nrow(Data)==1){Covariates = NULL} #if only one observation, don't correct for covariates
 
@@ -286,42 +283,42 @@ WaveQTL_preprocess <- function(Data, library.read.depth = NULL, Covariates = NUL
   	J = log2(T)
   	if(!isTRUE(all.equal(J,trunc(J)))){stop("Error: number of columns of Data must be power of 2")}
   	N = dim(Data)[1]
-        
-        
+
+
 	### generate filtered.WCs
 	if(!is.null(meanR.thresh)){
-		filtered.WCs = fiter.WCs(Data, meanR.thresh)				
+		filtered.WCs = fiter.WCs(Data, meanR.thresh)
 	}else{
 		filtered.WCs = NULL
-	}	
+	}
 
-        
+
         ### corrected for read depth
         if(!is.null(library.read.depth)){
             DataC = Data/library.read.depth
         }else{
             DataC = Data
         }
-        
+
 	### Wavelet Transform
         WCs = FWT(DataC, filter.number=filter.number, family=family)$WCs
 
-	
+
         if(!no.QT){ # Normalize phenotype for testing
-            ### Normalize WCs    
+            ### Normalize WCs
             if(N > 1){
 		WCs = Normalize.WCs(WCs, Covariates)
             }
             WCs = WCs$QT_WCs
-        }else{  # Normalize for effect size estimation 
-            ### correct for Covariates 
+        }else{  # Normalize for effect size estimation
+            ### correct for Covariates
             if(!is.null(Covariates)){
 		WCs = apply(WCs, 2, corrected_forCovariates, Covariates)
             }
         }
-        
+
         return(list(WCs = WCs, filtered.WCs = filtered.WCs))
-    } 
+    }
 
 
 

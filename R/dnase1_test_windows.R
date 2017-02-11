@@ -1,14 +1,14 @@
 #' Run a variety of tests in pre-defined windows
 #'@description Calculate test statistics binning over regions
-#'@param dat.file
-#'@param pheno.file
-#'@param maxit
+#'@param dat.file Data file
+#'@param pheno.file Phenotype file
+#'@param maxit Maximum iterations for Huber estimation
 #'@param trait Trait name in pheno.file
 #'@param names Names column in pheno.file
 #' @return A list
 #'@export
 dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
-													maxit=50, trait="pheno", names="name", 
+													maxit=50, trait="pheno", names="name",
 													save.collapsed=NULL){
   #normp <- function(x){
   #  return(2*pnorm(abs(x), lower.tail=FALSE))
@@ -50,7 +50,7 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
 	win.ref <- read_delim(window.file, delim="\t", col_names=FALSE)
 	win.ref <- win.ref[win.ref[,1]==chr,]
 
-	wins <- unique(dat$win)	
+	wins <- unique(dat$win)
 	stopifnot(length(wins)==nrow(win.ref))
 	stopifnot(all(wins==1:nrow(win.ref)))
 	dat.collapsed <- by(data=dat[, 3:ncol(dat)], INDICES=dat$win, FUN=colSums)

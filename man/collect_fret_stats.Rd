@@ -4,8 +4,8 @@
 \alias{collect_fret_stats}
 \title{Collect fret_stats temporary files}
 \usage{
-collect_fret_stats(temp.dir, temp.prefix, which.chunk, out.file = NULL,
-  del.temp = FALSE, min.interval.width = NULL)
+collect_fret_stats(temp.dir, temp.prefix, which.chunk, n.perm = NULL,
+  out.file = NULL, del.temp = FALSE, min.interval.width = NULL)
 }
 \arguments{
 \item{temp.dir}{Directory containing temporary files}
@@ -14,6 +14,8 @@ collect_fret_stats(temp.dir, temp.prefix, which.chunk, out.file = NULL,
 test_chr1.N.RData where N is the chunk number then temp.prefix is test_chr1)}
 
 \item{which.chunk}{Vector of integers. Which chunks to collect}
+
+\item{n.perm}{Temporary parameter for compatibility with previous versions.}
 
 \item{out.file}{Name an output file}
 
