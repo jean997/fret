@@ -9,7 +9,7 @@
 #'@export
 dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
 													maxit=50, trait="pheno", names="name",
-													save.collapsed=NULL, waveqtl.min.pval =1e-8, 
+													save.collapsed=NULL, waveqtl.min.pval =1e-8,
                           waveQTL_loc="~/WaveQTL-master/bin/WaveQTL"){
   #normp <- function(x){
   #  return(2*pnorm(abs(x), lower.tail=FALSE))
@@ -56,9 +56,14 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
 	stopifnot(all(wins==1:nrow(win.ref)))
 	dat.collapsed <- by(data=dat[, 3:ncol(dat)], INDICES=dat$win, FUN=colSums)
 	dat.collapsed <- matrix(unlist(dat.collapsed), byrow=TRUE, nrow=length(wins))
-
+	if(!is.null(save.collapsed)){
+	  dat.collapsed <- data.frame(cbind(win.ref, dat.collapsed))
+	  names(dat.collapsed) <- c("Chromosome", "Start", "Stop", datnames)
+	  save(dat.collapsed, file=save.collapsed)
+	}
   #Window start stop
   #Four collumns for each stat: beta, se, stat, p-value
+	cat("Running Poisson, Huber, and t-tests.\n")
   res <- apply(dat.collapsed, MARGIN=1, FUN=function(y){
     sum0 = sum(y[x==0])
     sum1 = sum(y[x==1])
@@ -73,15 +78,10 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
   nms <- c(nms, "total0", "total1")
   names(res) <- nms
   cat("Running waveQTL\n")
-  waveqtl_pvals <- run_waveQTL(dat, x, min.pval=min.pval, 
+  waveqtl_pvals <- run_waveQTL(dat, x, min.pval=min.pval,
                         waveQTL_loc=waveQTL_loc)
   res$waveQTL_P <- waveqtl_pvals
   cat("\n")
-	if(!is.null(save.collapsed)){
-		dat.collapsed <- data.frame(cbind(win.ref, dat.collapsed))
-		names(dat.collapsed) <- c("Chromosome", "Start", "Stop", datnames)
-		save(dat.collapsed, file=save.collapsed)
-	}
   return(res)
 }
 
