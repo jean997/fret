@@ -10,7 +10,7 @@
 #'@param names Names column in pheno.file
 #'@return A list
 #'@export
-run_waveQTL <- function(dat, x, min.pval=1e-6, 
+run_waveQTL <- function(dat, x, min.pval=1e-6,
                         waveQTL_loc="~/WaveQTL-master/bin/WaveQTL"){
 
   #waveQTL needs to output a lot of data -- N will be the label for these files
@@ -19,9 +19,9 @@ run_waveQTL <- function(dat, x, min.pval=1e-6,
   cat(geno, file=paste0("geno_", N, ".txt"))
 
   n <- ncol(dat)
-  k <- nrow(windows)
 
   ww <- rle(dat$win)
+  k <- length(ww$lengths)
   starts <- c(1, cumsum(ww$lengths)+1)
   starts <- starts[-length(starts)]
   stops <- cumsum(ww$lengths)
