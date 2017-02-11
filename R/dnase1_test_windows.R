@@ -79,7 +79,7 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
   nms <- c(nms, "total0", "total1")
   names(res) <- nms
   cat("Running waveQTL\n")
-  waveqtl_pvals <- run_waveQTL(dat, x, min.pval=min.pval,
+  waveqtl_pvals <- run_waveQTL(dat, x, min.pval=waveqtl.min.pval,
                         waveQTL_loc=waveQTL_loc)
   res$waveQTL_P <- waveqtl_pvals
   cat("\n")
