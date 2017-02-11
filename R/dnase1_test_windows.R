@@ -9,7 +9,8 @@
 #'@export
 dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
 													maxit=50, trait="pheno", names="name",
-													save.collapsed=NULL){
+													save.collapsed=NULL, waveqtl.min.pval =1e-8, 
+                          waveQTL_loc="~/WaveQTL-master/bin/WaveQTL"){
   #normp <- function(x){
   #  return(2*pnorm(abs(x), lower.tail=FALSE))
   #}
@@ -66,11 +67,15 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
   res <- data.frame(t(res))
 	res <- cbind(win.ref, res)
   nms <- c("Chromosome", "Start", "Stop")
-  nms <- c(nms, paste0("Huber", c("Beta", "SE", "Stat", "P")))
-  nms <- c(nms, paste0("Pois", c("Beta", "SE", "Stat", "P")))
-  nms <- c(nms, paste0("T", c("Beta", "SE", "Stat", "P")))
+  nms <- c(nms, paste0("Huber_", c("Beta", "SE", "Stat", "P")))
+  nms <- c(nms, paste0("Pois_", c("Beta", "SE", "Stat", "P")))
+  nms <- c(nms, paste0("T_", c("Beta", "SE", "Stat", "P")))
   nms <- c(nms, "total0", "total1")
   names(res) <- nms
+  cat("Running waveQTL\n")
+  waveqtl_pvals <- run_waveQTL(dat, x, min.pval=min.pval, 
+                        waveQTL_loc=waveQTL_loc)
+  res$waveQTL_P <- waveqtl_pvals
   cat("\n")
 	if(!is.null(save.collapsed)){
 		dat.collapsed <- data.frame(cbind(win.ref, dat.collapsed))
