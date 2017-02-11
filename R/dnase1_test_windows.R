@@ -57,15 +57,15 @@ dnase1_test_windows <- function(dat.file, pheno.file, window.file, chr,
 	dat.collapsed <- by(data=dat[, 3:ncol(dat)], INDICES=dat$win, FUN=colSums)
 	dat.collapsed <- matrix(unlist(dat.collapsed), byrow=TRUE, nrow=length(wins))
 	if(!is.null(save.collapsed)){
-	  dat.collapsed <- data.frame(cbind(win.ref, dat.collapsed))
-	  names(dat.collapsed) <- c("Chromosome", "Start", "Stop", datnames)
-	  save(dat.collapsed, file=save.collapsed)
+	  my.dat.collapsed <- data.frame(cbind(win.ref, dat.collapsed))
+	  names(my.dat.collapsed) <- c("Chromosome", "Start", "Stop", datnames)
+	  save(my.dat.collapsed, file=save.collapsed)
 	}
   #Window start stop
   #Four collumns for each stat: beta, se, stat, p-value
 	cat("Running Poisson, Huber, and t-tests.\n")
   res <- apply(dat.collapsed, MARGIN=1, FUN=function(y){
-    cat(y, "\n")
+    #cat(y, "\n")
     sum0 = sum(y[x==0])
     sum1 = sum(y[x==1])
     c(huber_reg(y, x), pois_reg(y, x), tt(y, x), sum0, sum1)
