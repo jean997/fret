@@ -50,9 +50,9 @@ fret_rates <- function(file.list, fdr.max=0.8, perm=0){
       mp <- R$mperm[R$mperm$perm!=perm,]
       max.perm <- rbind(max.perm, mp)
       if(s == 1){
-        m1 <- m1[abs(max1$mx) >= R$zmin, ]
+        m1 <- m1[abs(m1$mx) >= R$zmin, ]
       }else{
-        ix <- which(( max1$mx > 0 & max1$mx > zmin[1]) | (max1$mx < 0 & max1$mx < zmin[2]))
+        ix <- which(( m1$mx > 0 & m1$mx > zmin[1]) | (m1$mx < 0 & m1$mx < zmin[2]))
         m1 <- m1[ix, ]
       }
       max1 <- rbind(max1, m1)
