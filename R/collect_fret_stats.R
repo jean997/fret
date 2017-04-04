@@ -103,7 +103,11 @@ get_perm_num <- function(ix1, n.perm){
   xx <- ix1[1:(N-1)] < ix1[2:N]
   ix <- c(1, which(!xx), N)
   len <- diff(ix)
-  stopifnot(length(len)==n.perm)
-  perm <- rep(1:n.perm, len)
+  if(len(len) < n.perm){
+    perms <- sort(sample(1:n.perm, length(len), replace=FALSE))
+    perm <- rep(perms, len)
+  }else{
+    perm <- rep(1:n.perm, len)
+  }
   return(perm)
 }
