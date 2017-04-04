@@ -266,15 +266,17 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     N <- nend-nstart + 1
     sum_stat_sq <- rep(0, N)
     sum_stat <- rep(0, N)
-    R.temp$mperm <- data.frame(matrix(nrow=0, ncol=6))
-    names(R.temp$mperm) <- c("mx", "pos", "start", "stop", "ix1", "ix2")
+    R.temp$mperm <- data.frame(matrix(nrow=0, ncol=7))
+    names(R.temp$mperm) <- c("mx", "pos", "start", "stop", "ix1", "ix2", "perm")
     for(i in 1:n.perm){
       cat(i, " ")
       sts <- stat.func(dat[,-1], x=perms[,i], s0=s0)
       sm.sts <- smooth.func(x=dat[[1]], y=sts[3,], xout=dat[[1]][mstart:mend], bandwidth = bandwidth)
       sum_stat_sq <- sum_stat_sq + sm.sts[nmstart:nmend]^2
       sum_stat <- sum_stat + sm.sts[nmstart:nmend]
-      R.temp$mperm <- rbind(R.temp$mperm, mxlist(sm.sts, z0, zmin, pos=dat[[1]][mstart:mend]))
+      mm <- mxlist(sm.sts, z0, zmin, pos=dat[[1]][mstart:mend])
+      mm$perm <- i
+      R.temp$mperm <- rbind(R.temp$mperm, mm)
     }
     cat("\n")
     R.temp$perm.var <- data.frame("pos"=dat[[1]][nstart:nend],
