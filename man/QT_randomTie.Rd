@@ -16,4 +16,3 @@ quantile-transformed data.
 This function quantile-transforms data to a standard normal distribution. It randomly assign
 ranks for ties.
 }
-

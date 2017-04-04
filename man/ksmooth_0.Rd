@@ -22,4 +22,3 @@ ksmooth_0(x, y, xout, bandwidth, stitch = NULL, parallel = FALSE,
 \description{
 Kernel smoother assuming missing positions are 0
 }
-

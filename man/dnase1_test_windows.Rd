@@ -5,7 +5,8 @@
 \title{Run a variety of tests in pre-defined windows}
 \usage{
 dnase1_test_windows(dat.file, pheno.file, window.file, chr, maxit = 50,
-  trait = "pheno", names = "name", save.collapsed = NULL)
+  trait = "pheno", names = "name", save.collapsed = NULL,
+  waveqtl.min.pval = 1e-08, waveQTL_loc = "~/WaveQTL-master/bin/WaveQTL")
 }
 \arguments{
 \item{dat.file}{Data file}
@@ -24,4 +25,3 @@ A list
 \description{
 Calculate test statistics binning over regions
 }
-

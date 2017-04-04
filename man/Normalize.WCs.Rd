@@ -22,4 +22,3 @@ This function quantile-transforms WCs to a standard normal distribution.
 If covariates are provided, it corrects the quantile-transformed WCs for the covariates
 and quantile-transforms the covariates-corrected WCs to a standard normal distribution.
 }
-

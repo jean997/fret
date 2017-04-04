@@ -24,4 +24,3 @@ huber_stats_parallel(Y, x, cl = NULL, cores = parallel::detectCores() - 1,
 \description{
 Calculate Huber test statistics with variance infaltion constant using parallel package
 }
-

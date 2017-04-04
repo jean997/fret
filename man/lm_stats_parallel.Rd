@@ -24,4 +24,3 @@ lm_stats_parallel(Y, x, cl = NULL, cores = parallel::detectCores() - 1,
 \description{
 Calculate OLS test statistics using parallel package
 }
-

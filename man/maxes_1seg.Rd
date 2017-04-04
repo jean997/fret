@@ -44,4 +44,3 @@ Saves an RData file with maxes list and other info. Returns the length of that l
 \description{
 Finds peak heights and permuatation peak heights for one segment
 }
-

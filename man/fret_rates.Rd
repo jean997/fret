@@ -17,4 +17,3 @@ An object that can be passed to fret_thresholds
 \description{
 Find thresholds for a range of lambda values. Calculate FDR.
 }
-

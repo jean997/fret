@@ -35,4 +35,3 @@ outputs group information indicating that WCs in the same scale share \pi.
 To put WCs from multiple scales (only for consecutive scales) in the same group,
 instruction should be provided in group.scale (see below for details).
 }
-

@@ -23,4 +23,3 @@ huber_stats(Y, x, s0 = 0, k = 1.345, maxit = 50)
 \description{
 Calculate Huber test statistics with variance inflation constant.
 }
-

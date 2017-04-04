@@ -18,4 +18,3 @@ then fret.obj should contain an item `seg.bounds` which will be used instead.}
 \description{
 Calculate per-base error rates for original and permutation peaks
 }
-

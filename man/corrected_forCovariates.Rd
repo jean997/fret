@@ -18,4 +18,3 @@ a vector of length N; covariates corrected data.
 \description{
 This function corrects for covariates.
 }
-

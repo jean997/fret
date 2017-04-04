@@ -61,4 +61,3 @@ that are computed based on very low counts. The function considers WCs
 as low count if the total counts used in their computation were less than
 or equal to `meanR.thresh' per individual on average.
 }
-

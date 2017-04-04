@@ -9,4 +9,3 @@ getobj(Rdata)
 \description{
 Get an object from an .RData file
 }
-

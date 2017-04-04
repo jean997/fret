@@ -30,4 +30,3 @@ and returns WCs in the order that corresponds to output from the function
 \code{\link{fiter.WCs}}. For now, the function doesn't allow users to specify the level of wavelet
 decomposition and uses the maximum level decomposition.
 }
-

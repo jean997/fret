@@ -14,4 +14,3 @@ choose_s0(beta, sds)
 \description{
 Select s0 using the method of Tusher, Tibshirani and Chu (2001)
 }
-

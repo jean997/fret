@@ -21,4 +21,3 @@ ksmooth_0_old(x, y, xout, bandwidth)
 \description{
 Kernel smoother assuming missing positions are 0
 }
-

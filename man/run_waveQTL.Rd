@@ -4,7 +4,8 @@
 \alias{run_waveQTL}
 \title{Run waveQTL}
 \usage{
-run_waveQTL(dat, x, waveQTL_loc = "~/WaveQTL-master/bin/WaveQTL")
+run_waveQTL(dat, x, min.pval = 1e-06,
+  waveQTL_loc = "~/WaveQTL-master/bin/WaveQTL")
 }
 \arguments{
 \item{dat}{matrix or data frame of data. First column should be position.
@@ -22,4 +23,3 @@ A list
 \description{
 Runs the method of Shim and Stephens 2014
 }
-

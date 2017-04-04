@@ -23,4 +23,3 @@ Use variance of smoothed  permutation test statistics to define interval endpoin
 Intervals are placed so that high variance regions are separated from each other and from low variance
 regions.
 }
-

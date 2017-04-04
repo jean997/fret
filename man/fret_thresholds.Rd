@@ -17,4 +17,3 @@ The first column is chromosome. The second column is the corresponding stats fil
 \value{
 An object that can be passed to fret_thresholds
 }
-

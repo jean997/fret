@@ -54,4 +54,3 @@ The ksmooth smoother treats these base-pairs as missing (appropriate for bisulfi
 
 \item{out.file}{Name an output file}
 }
-
