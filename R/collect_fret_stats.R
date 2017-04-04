@@ -101,7 +101,7 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk, n.perm=NULL,
 get_perm_num <- function(ix1, n.perm){
   N <- length(ix1)
   xx <- ix1[1:(N-1)] < ix1[2:N]
-  ix <- c(1, which(!xx), N)
+  ix <- c(1, which(!xx)+1, N+1)
   len <- diff(ix)
   if(length(len) < n.perm){
     perms <- sort(sample(1:n.perm, length(len), replace=FALSE))
