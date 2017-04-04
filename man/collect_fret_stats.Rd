@@ -27,4 +27,3 @@ test_chr1.N.RData where N is the chunk number then temp.prefix is test_chr1)}
 Combine temporary files from fret_stats into one file.
 Also determine interval boundaries.
 }
-
