@@ -14,7 +14,7 @@ VignetteBuilder: knitr
 LinkingTo: Rcpp
 Imports:
     Rcpp
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 Collate:
     'RcppExports.R'
     'choose_s0.R'
@@ -31,3 +31,4 @@ Collate:
     'WaveQTL_preprocess_funcs.R'
     'dnase1_test_windows.R'
     'run_waveQTL.R'
+    'qqthin.R'
