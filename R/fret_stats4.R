@@ -4,7 +4,7 @@
 #' @param pheno.file File containing genomic phenotype
 #' @param trait.file File containing trait information
 #' @param s0 Variance inflation constant
-#' @param seed Seed
+#' @param seed Seed (used for permutations)
 #' @param n.perm Number of permutations.
 #' If n.perm=0, only test statistics for unpermuted data will be calculated
 #' @param zmin Minimum threshold (may be missing if n.perm=0)
@@ -37,13 +37,7 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
   if(length(trait) !=1) stop("ERROR: Handling of multivariate traits is not implemented yet!\n")
   if(is.null(zmin)) stopifnot(n.perm==0)
 
-  #Cluster
-  if(parallel){
-    cl <- makeCluster(cores, type="FORK")
-    on.exit(stopCluster(cl))
-  }else{
-    cl <- NULL
-  }
+
   #stat type
   stat.type <- match.arg(stat.type)
   if(stat.type=="huber"){
@@ -51,7 +45,8 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
       rlm(formula, data=data, maxit=maxit)
     }
     if(!parallel) stat.func <- function(Y, x, s0){ huber_stats(Y, x, s0, maxit=maxit)}
-    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit, cl=cl, digits=digits)}
+    	else stat.func <- function(Y, x, s0){ huber_stats_parallel(Y, x, s0=s0, maxit=maxit,
+    	                                                           cores=cores, digits=digits)}
   }else if(stat.type=="lm"){
     lm.func <- function(formula, data){
       lm(formula, data=data)
