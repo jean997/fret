@@ -25,7 +25,7 @@ fret_rates <- function(file.list, fdr.max=0.8, perm=0){
     max1 <- R$mperm[R$mperm$perm==perm, ]
     max.perm <- R$mperm[R$mperm$perm!=perm,]
     if(s == 1){
-      max1 <- max1[abs(max1$mx) >= R$zmin, ]
+      max1 <- max1[abs(max1$mx) >= zmin, ]
     }else{
       ix <- which(( max1$mx > 0 & max1$mx > zmin[1]) | (max1$mx < 0 & max1$mx < zmin[2]))
       max1 <- max1[ix, ]
@@ -34,7 +34,6 @@ fret_rates <- function(file.list, fdr.max=0.8, perm=0){
   R$seg.bounds$name <- paste0(R$seg.bounds$chr, ".", 1:nrow(R$seg.bounds))
   segment.bounds <- R$seg.bounds
   n.perm <- R$n.perm
-  if(perm > 0) n.prem <- R$n.perm -1
 
   file.list <- file.list[-1]
   for(f in file.list){
@@ -86,7 +85,7 @@ fret_rates <- function(file.list, fdr.max=0.8, perm=0){
   lam.target.pb <- lam.target/sum(segment.bounds$nbp)
   max.perm <- max.perm[max.perm$lambda_perbase <= lam.target.pb,]
 
-  return(list("max1"=max1, "segment.bounds"=segment.bounds,
+  return(list("max1"=max1, "segment.bounds"=segment.bounds, "perm" = perm,
               "max.perm"=max.perm, "n.perm"=n.perm, "zmin"=zmin))
 }
 
