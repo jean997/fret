@@ -4,8 +4,8 @@
 \alias{huber_stats_parallel}
 \title{Calculate Huber test statistics using parallel package}
 \usage{
-huber_stats_parallel(Y, x, cl = NULL, cores = parallel::detectCores() - 1,
-  s0 = 0, k = 1.345, maxit = 50, digits = Inf)
+huber_stats_parallel(Y, x, cores = parallel::detectCores() - 1, s0 = 0,
+  k = 1.345, maxit = 50, digits = Inf)
 }
 \arguments{
 \item{Y}{matrix (p x n)}

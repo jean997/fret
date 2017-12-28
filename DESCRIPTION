@@ -1,34 +1,18 @@
 Package: fret
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1
+Title: Association testing with spatially structured phenotypes
+Version: 0.2.0
 Date: 2016-08-31
 Author: Jean Morrison
 Maintainer: Jean Morrison <jeanm@uchicago.edu>
 Description: More about what it does (maybe more than one line)
-License: What license is it under?
+License: GPL (>= 2)
 LazyData: TRUE
-Suggests:
-    knitr
+Encoding: UTF-8
+URL: http://github.com/jean997/fret
+BugReports: http://github.com/jean997/fret/issues
+Suggests:knitr
 VignetteBuilder: knitr
-LinkingTo: Rcpp
-Imports:
-    Rcpp
+LinkingTo: Rcpp, RcppParallel
+Imports:  Rcpp (>= 0.12.9.2), RcppParallel (>= 4.3.20)
 RoxygenNote: 6.0.1
-Collate:
-    'RcppExports.R'
-    'choose_s0.R'
-    'collect_fret_stats.R'
-    'find_segments.R'
-    'fret_rates.R'
-    'fret_rates_prelim.R'
-    'fret_thresholds.R'
-    'fret_stats4.R'
-    'ksmooth_0.R'
-    'maxes_1seg.R'
-    'stats.R'
-    'util.R'
-    'WaveQTL_preprocess_funcs.R'
-    'dnase1_test_windows.R'
-    'run_waveQTL.R'
-    'qqthin.R'

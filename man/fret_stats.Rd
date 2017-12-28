@@ -19,7 +19,7 @@ fret_stats(pheno.file, trait.file, s0, seed, n.perm, zmin = NULL, z0 = zmin
 
 \item{s0}{Variance inflation constant}
 
-\item{seed}{Seed}
+\item{seed}{Seed (used for permutations)}
 
 \item{n.perm}{Number of permutations.
 If n.perm=0, only test statistics for unpermuted data will be calculated}
