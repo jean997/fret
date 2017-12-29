@@ -1,11 +1,6 @@
-#include <RcppParallel.h>
 #include <Rcpp.h>
-//[[Rcpp:depends(RcppParallel)]]
+
 using namespace Rcpp;
-using namespace tbb;
-
-
-using namespace RcppParallel;
 
 // [[Rcpp::plugins(cpp11)]]
 
