@@ -293,6 +293,6 @@ fret_stats <- function(pheno.file, trait.file, s0, seed, n.perm, zmin=NULL, z0=z
     return(R)
   }
   cat("Collecting results.\n")
-  R <- collect_fret_stats(temp.dir, temp.prefix)
+  R <- collect_fret_stats(temp.dir, temp.prefix, which.chunk = which.chunks)
   return(R)
 }
