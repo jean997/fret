@@ -17,11 +17,11 @@ choose_s0 <- function(beta, sds){
   ix <- sapply(sds, FUN=function(w){ sum(w >= c(0, salpha))})
 
   fct <- function(s0, beta, sds, ix){
-    cat(s0, " ")
+    #cat(s0, " ")
     xx <- beta/(sds + s0)
     v <- as.numeric(by(data=xx, INDICES = ix, FUN = mad, constant = 1/0.64))
     cv <- sd(v)/mean(v)
-    cat(cv, "\n")
+    #cat(cv, "\n")
     return(cv)
   }
 
