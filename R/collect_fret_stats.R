@@ -25,14 +25,14 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk, n.perm=NULL,
   chrom <- R$chrom
   zmin <- R$zmin
   ##TEMPORARY
-  if(is.null(R$n.perm)){
-    if(is.null(n.perm)) stop("Please manually supply n.perm since these files are an older version")
-    else{
-      R$n.perm <- n.perm
-    }
-  }else{
+  #if(is.null(R$n.perm)){
+  #  if(is.null(n.perm)) stop("Please manually supply n.perm since these files are an older version")
+  #  else{
+  #    R$n.perm <- n.perm
+  #  }
+  #}else{
     n.perm <- R$n.perm
-  }
+  #}
   ###
   #k keeps track of how much information is in the temporary files
   k <- 1
@@ -84,13 +84,15 @@ collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk, n.perm=NULL,
     R$perm.var <- perm.var
   }
   if(is.null(min.interval.width)) min.interval.width=50*R$bandwidth
-  sb <- find_segments(vv=R$perm.var$var, pos=R$perm.var$pos, min.length=min.interval.width)
-  R$seg.bounds <- data.frame("chr"=rep(R$chrom, nrow(sb)), "start"=sb[,1], "stop"=sb[,2])
+  if(k > 3){
+    sb <- find_segments(vv=R$perm.var$var, pos=R$perm.var$pos, min.length=min.interval.width)
+    R$seg.bounds <- data.frame("chr"=rep(R$chrom, nrow(sb)), "start"=sb[,1], "stop"=sb[,2])
+  }
   #Temporary
-  if(is.null(R$n.perm)) R$n.perm <- n.perm
+  #if(is.null(R$n.perm)) R$n.perm <- n.perm
 
   if(is.null(out.file)){
-    R <- fret_rates_prelim(fret.obj=R, parallel=FALSE, save.file=NULL)
+    if(k > 3) R <- fret_rates_prelim(fret.obj=R, parallel=FALSE, save.file=NULL)
     return(R)
   }
   fret_rates_prelim(fret.obj=R, parallel=FALSE, save.file=out.file)
