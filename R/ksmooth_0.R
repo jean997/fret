@@ -39,8 +39,13 @@ ksmooth_0_jean <- function(x, y, xout, bandwidth, chunksize){
 #'@return Vector of smoothed values with length equal to length of xout.
 #'@export
 ksmooth_0 <- function(x, y, xout, bandwidth){
+
   stopifnot(length(x)==length(y))
-  if(!all(floor(x)==x) | !all(floor(xout)==xout)) stop("Only integer positions\n")
+  if(!all(floor(x)==x)) stop("Only integer positions please.\n")
+  if(missing(xout)){
+    xout <- x
+  }
+  if(!all(floor(xout)==xout)) stop("Only integer positions please.\n")
   if(!floor(bandwidth)==bandwidth) stop("Please use an odd integer bandwidth with ksmooth_0")
   if(any(is.na(y))) stop("No missing values please.\n")
 
@@ -49,6 +54,7 @@ ksmooth_0 <- function(x, y, xout, bandwidth){
         " with ", bandwidth + 1, "\n")
     bandwidth <- bandwidth + 1
   }
+
   margin <- ceiling(bandwidth/2)
   xlong <- (min(x)-margin):(max(x) + margin)
   ylong <- rep(0, length(xlong))
