@@ -4,19 +4,16 @@
 \alias{lm_stats_parallel}
 \title{Calculate OLS test statistics using parallel package}
 \usage{
-lm_stats_parallel(Y, x, cores = parallel::detectCores() - 1, s0 = 0,
-  k = 1.345, maxit = 50)
+lm_stats_parallel(Y, x, cores, s0)
 }
 \arguments{
 \item{Y}{matrix (p x n)}
 
 \item{x}{trait values}
 
+\item{cores}{Number of cores to use}
+
 \item{s0}{Additional variance}
-
-\item{k}{Threshold for huber estimator in multiples of scale parameter.}
-
-\item{maxit}{Maixum iterations to pass to rlm.}
 }
 \value{
 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)

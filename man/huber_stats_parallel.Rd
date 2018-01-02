@@ -4,8 +4,7 @@
 \alias{huber_stats_parallel}
 \title{Calculate Huber test statistics using parallel package}
 \usage{
-huber_stats_parallel(Y, x, cores = parallel::detectCores() - 1, s0 = 0,
-  k = 1.345, maxit = 50, digits = Inf)
+huber_stats_parallel(Y, x, cores, s0, maxit, k = 1.345)
 }
 \arguments{
 \item{Y}{matrix (p x n)}
@@ -14,9 +13,9 @@ huber_stats_parallel(Y, x, cores = parallel::detectCores() - 1, s0 = 0,
 
 \item{s0}{Additional variance}
 
-\item{k}{Threshold for huber estimator in multiples of scale parameter.}
-
 \item{maxit}{Maixum iterations to pass to rlm.}
+
+\item{k}{Threshold for huber estimator in multiples of scale parameter.}
 }
 \value{
 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)

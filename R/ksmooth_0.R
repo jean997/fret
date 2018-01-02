@@ -50,8 +50,8 @@ ksmooth_0 <- function(x, y, xout, bandwidth){
   if(any(is.na(y))) stop("No missing values please.\n")
 
   if(bandwidth %% 2 == 0){
-    cat("Warning: ksmooth_0 must use odd bandwidth. Replacing ", bandwidth,
-        " with ", bandwidth + 1, "\n")
+    warning(paste0("ksmooth_0 must use odd bandwidth. Replacing ", bandwidth,
+        " with ", bandwidth + 1, "\n"))
     bandwidth <- bandwidth + 1
   }
 

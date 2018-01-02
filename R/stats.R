@@ -14,7 +14,7 @@
 #'@export
 huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=50){
   B <- apply(Y, MARGIN=1, FUN=function(y){
-    f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit)
+    suppressWarnings(f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit))
     coef <- summary(f)$coefficients
     if(nrow(coef)==1) return(c(NA, NA, 0))
     b1 <- coef[2, 1]
@@ -35,14 +35,12 @@ huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=50){
 #'@param maxit Maixum iterations to pass to rlm.
 #'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
 #'@export
-huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1,
-                                 s0 = 0,  k=1.345, maxit=50, digits=Inf){
+huber_stats_parallel <- function(Y, x, cores, s0, maxit,  k=1.345){
 
   cl <- makeCluster(cores, type="FORK")
 
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
-    y <- round(y, digits=digits)
-    f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit)
+    suppressWarnings(f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit))
     coef <- summary(f)$coefficients
     if(nrow(coef)==1) return(c(NA, NA, 0))
     b1 <- coef[2, 1]
@@ -60,11 +58,10 @@ huber_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1,
 #'@param Y matrix (p x n)
 #'@param x trait values
 #'@param s0 Additional variance
-#'@param k Threshold for huber estimator in multiples of scale parameter.
-#'@param maxit Maixum iterations to pass to rlm.
+#'@param cores Number of cores to use
 #'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
 #'@export
-lm_stats_parallel <- function(Y, x, cores=parallel::detectCores()-1, s0 = 0,  k=1.345, maxit=50){
+lm_stats_parallel <- function(Y, x, cores, s0){
 
   cl <- makeCluster(cores, type="FORK")
 

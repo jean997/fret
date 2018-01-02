@@ -4,53 +4,89 @@
 \alias{fret_stats}
 \title{Calculate FRET test statistics}
 \usage{
-fret_stats(pheno.file, trait.file, s0, seed, n.perm, zmin = NULL, z0 = zmin
-  * 0.3, pheno.transformation = NULL, trait = c("x"), covariates = c(),
-  bandwidth = 150, smoother = c("ksmooth_0", "ksmooth", "none"),
-  stat.type = c("huber", "lm"), maxit = 50, margin = 5 * bandwidth,
-  range = NULL, chunksize = 1e+05, which.chunks = NULL,
-  temp.prefix = NULL, temp.dir = "./", chrom = "chr1", parallel = TRUE,
-  cores = parallel::detectCores() - 1, digits = Inf)
+fret_stats(pheno_file_list, trait_file, dry_run = c(TRUE, "s0_only", FALSE),
+  s0, zmin, z0 = if (!missing(zmin)) 0.3 * zmin, s0_est_size = 1e+07, seed,
+  n_perm = 0, pheno_transformation = NULL, trait = c("x"),
+  covariates = c(), stat_type = c("huber", "lm"), huber_maxit = 50,
+  bandwidth = 150, smoother = c("ksmooth_0", "ksmooth"),
+  chunksize = 1e+05, which_chunks = "all", temp_dir = "./",
+  temp_prefix = NULL, labels = pheno_file_list, cores = 1)
 }
 \arguments{
-\item{pheno.file}{File containing genomic phenotype}
+\item{pheno_file_list}{Name or vector of names of genomic phenotype files}
 
-\item{trait.file}{File containing trait information}
+\item{trait_file}{Name of trait file}
 
-\item{s0}{Variance inflation constant}
+\item{dry_run}{One of TRUE, "s0_only", FALSE. See description for details.}
 
-\item{seed}{Seed (used for permutations)}
+\item{s0}{Variance inflation constant. If missing, s0 will be estimated
+using a random chunk of the data. (See description and s0_est_size argument)}
 
-\item{n.perm}{Number of permutations.
-If n.perm=0, only test statistics for unpermuted data will be calculated}
-
-\item{zmin}{Minimum threshold (may be missing if n.perm=0)}
+\item{zmin}{Minimum threshold. If missing, will be set to the 90th percentile of a
+sample of test statistics (See details below).}
 
 \item{z0}{Merging threshold. If missing z0 = 0.3*zmin.}
 
-\item{pheno.transformation}{If the phenotype is to be transformed, provide a function taking one argument}
+\item{s0_est_size}{Number of test statistics used to estimate s0. Alternatively, s0_est_size may be a character
+string giving a phenotype file name. In this case, all test statistics from that file will be used.}
 
-\item{trait}{Name of trait (should match header of trait.file)}
+\item{seed}{Seed (used for permutations). If missing, a random seed will be chosen and stored.}
 
-\item{covariates}{List of covariates found in trait.file to adjust for}
+\item{n_perm}{Number of permutations.
+If n.perm=0, only test statistics for unpermuted data will be calculated.}
+
+\item{pheno_transformation}{If the phenotype is to be transformed, provide a function taking one argument (the vector of phenotype)
+and outputting the transformed phenotype.}
+
+\item{trait}{Name of trait (should match header of trait_file)}
+
+\item{covariates}{List of covariates to adjust for (names should match header of trait_file)}
+
+\item{stat_type}{Type of test statistis. May be one of "huber" or "lm".}
+
+\item{huber_maxit}{Maximum iterations for Huber estimator.}
 
 \item{bandwidth}{Smoothing bandwidth}
 
-\item{stat.type}{Either "huber" or "lm"}
-
-\item{maxit}{Maximum iterations for Huber estimator.}
-
-\item{range}{Base-pair range. If missing, stats for the whole file will be calculated}
-
 \item{chunksize}{Size of chunks to read at one time}
 
-\item{chrom}{Name of chromosome}
+\item{which_chunks}{Either a vector of chunk numbers or "all". See about running FRET in parallel or on a cluster.}
 
-\item{save.perm.stats}{Should the permutation test statistics be saved?}
+\item{temp_dir}{Directory to write temporary chunk output to}
 
-\item{smooother}{Either "ksmooth_0" or "ksmooth". The ksmooth_0 smoother treats base-pairs
-with no data as though the phenotype at that position is equal to zero for all samples (appropriate for DNase-seq data).
-The ksmooth smoother treats these base-pairs as missing (appropriate for bisulfite sequencing data).}
+\item{temp_prefix}{Prefix to use for chunk output}
 
-\item{out.file}{Name an output file}
+\item{labels}{Vector of labels for each phenotype file. These will be used in results tables and also in temporary file names.}
+
+\item{cores}{Number of cores to use. Using more than one requires the parallel package.}
+
+\item{smooother}{Choice of smoother for smoothing test statistics. Can be
+one of "ksmooth_0"  or "ksmooth". See details below.}
+}
+\details{
+dry_run: The function can run in one of three modes. If dry_run=TRUE it will report information about the data provided,
+the model and the number of chunks and then exit. If dry_run = "s0_only" it will report this information, estimate s0 and zmin and exit.
+If dry_run = FALSE it will proceed to calculate all test statistics and permutation test statistics for the specified chunks.
+
+Running on a cluster or in parallel: The which_chunks argument is intended to facilitate breaking a very large job into many small
+jobs that can be easily submitted to a cluster. It can also help with resuming an analysis that was interrupted. To limit memory
+requirements, only chunks of size chunksize will be read in and analyzed at one time. Results of these analyses are
+then written to disk in files named temp_dir/temp_prefix-label.chunknum.RDS. It is important to make sure that temp_dir
+has enough space to store lots of test statistics. If which_chunks="all", these temporary files will be automatically aggregated
+into a single set of results. If the analysis is conducted over many jobs, the uster will need to call the collect_fret_stats
+function to do this themselves(see documentation for collect_fret_stats). In addition to breaking chunks over many nodes
+or many jobs, the cores parameter can be used to perform calculations using multiple cores via the parallel package.
+
+Smoother choice: There are three options for smoothing test statistics. "ksmooth_0" is a box kernel smoother for observations
+made at integer positions. It assumes that observations at missing positions are equal to 0. This is an appropriate smoother choice
+for DNase-seq and similar data types. In DNase-seq data, if a position is not present in the data, all samples have 0 cleavages
+observed at the position so the test statistic is equal to 0. "ksmooth" is a box kernel smoother that assumes observations
+at missing positions are missing. This is appropriate for bisulfite sequencing data.
+
+Estimating s0, zmin, and z0: If s0 is not provided, it will be estimated from the data (if dry_run = "s0_only" or FALSE).
+The function will use an amount of data specified by the s0_est_size argument. If this argument is a file name, all the data
+in that file will be used. If it is an integer, the number of data points specified will be used. If fewer than 1,000,000
+data points are used, the estimate might be unstable and a warning will be given. If zmin is missing, it will be set to the
+90th percentile of the test statistics in the data sample (after correcting using s0). If z0 is missing it will be set
+to 0.3*zmin.
 }

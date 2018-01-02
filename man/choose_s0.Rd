@@ -4,12 +4,12 @@
 \alias{choose_s0}
 \title{Select s0 using the method of Tusher, Tibshirani and Chu (2001)}
 \usage{
-choose_s0(beta, sds)
+choose_s0(beta, se)
 }
 \arguments{
 \item{beta}{Effect size estimates}
 
-\item{sds}{Estimates of sqrt(var(beta))}
+\item{se}{Estimates of sqrt(var(beta))}
 }
 \description{
 Select s0 using the method of Tusher, Tibshirani and Chu (2001)
