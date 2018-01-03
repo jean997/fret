@@ -4,16 +4,14 @@
 \alias{fret_rates_prelim}
 \title{Calculate per-base error rates for original and permutation peaks}
 \usage{
-fret_rates_prelim(fret.obj, segment.bounds = NULL, parallel = FALSE,
-  save.file = NULL)
+fret_rates_prelim(fret_obj, segment_lengths, segment_bounds)
 }
 \arguments{
-\item{fret.obj}{Either a fret object or a file containing a fret object}
+\item{fret_obj}{fret object or a file name or a vector of file names.}
 
-\item{segment.bounds}{Optional data frame of segment bounds. If ommitted
-then fret.obj should contain an item `seg.bounds` which will be used instead.}
+\item{segment_lengths}{data frame with (at least) two columns: segment and length in base-pairs}
 
-\item{parallel}{Run in parallel?}
+\item{segment_bounds}{data frame with (at least) two columns: start and stop base pair position}
 }
 \description{
 Calculate per-base error rates for original and permutation peaks

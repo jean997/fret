@@ -4,16 +4,16 @@
 \alias{find_segments}
 \title{Use variance of smoothed  permutation test statistics to define interval endpoints}
 \usage{
-find_segments(vv, pos, min.length, q = 0.05)
+find_segments(vv, pos, min_length, q = 0.05)
 }
 \arguments{
 \item{vv}{Variance of smoothed permutation test statistics}
 
 \item{pos}{Position vector. Should be the same length as vv}
 
-\item{min.length}{Minimum interval length}
+\item{min_length}{Minimum interval length}
 
-\item{q}{Quantile for upper limit for definition of high variance region. Currently 0.05}
+\item{q}{Quantile for upper limit for definition of high variance region.}
 }
 \value{
 2 by K matrix listing interval endpoints.

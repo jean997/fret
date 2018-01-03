@@ -4,20 +4,21 @@
 \alias{fret_stats}
 \title{Calculate FRET test statistics}
 \usage{
-fret_stats(pheno_file_list, trait_file, dry_run = c(TRUE, "s0_only", FALSE),
-  s0, zmin, z0 = if (!missing(zmin)) 0.3 * zmin, s0_est_size = 1e+07, seed,
-  n_perm = 0, pheno_transformation = NULL, trait = c("x"),
-  covariates = c(), stat_type = c("huber", "lm"), huber_maxit = 50,
-  bandwidth = 150, smoother = c("ksmooth_0", "ksmooth"),
-  chunksize = 1e+05, which_chunks = "all", temp_dir = "./",
-  temp_prefix = NULL, labels = pheno_file_list, cores = 1)
+fret_stats(pheno_file_list, trait_file, mode = c("dry_run", "s0_only",
+  "full"), s0, zmin, z0 = if (!missing(zmin)) 0.3 * zmin,
+  s0_est_size = pheno_file_list[1], seed, n_perm = 0,
+  pheno_transformation = NULL, trait = c("x"), covariates = c(),
+  stat_type = c("huber", "lm"), huber_maxit = 50, bandwidth = 151,
+  smoother = c("ksmooth_0", "ksmooth"), chunksize = 1e+05,
+  which_chunks = "all", temp_dir = "./", temp_prefix = NULL,
+  labels = pheno_file_list, cores = 1)
 }
 \arguments{
 \item{pheno_file_list}{Name or vector of names of genomic phenotype files}
 
 \item{trait_file}{Name of trait file}
 
-\item{dry_run}{One of TRUE, "s0_only", FALSE. See description for details.}
+\item{mode}{One of "dry_run", "s0_only", or "full". See description for details.}
 
 \item{s0}{Variance inflation constant. If missing, s0 will be estimated
 using a random chunk of the data. (See description and s0_est_size argument)}
@@ -64,9 +65,9 @@ and outputting the transformed phenotype.}
 one of "ksmooth_0"  or "ksmooth". See details below.}
 }
 \details{
-dry_run: The function can run in one of three modes. If dry_run=TRUE it will report information about the data provided,
-the model and the number of chunks and then exit. If dry_run = "s0_only" it will report this information, estimate s0 and zmin and exit.
-If dry_run = FALSE it will proceed to calculate all test statistics and permutation test statistics for the specified chunks.
+mode: The function can run in one of three modes. If mode="dry_run" it will report information about the data provided,
+the model and the number of chunks and then exit. If mode = "s0_only" it will report this information, estimate s0 and zmin and exit.
+If mode="full" it will proceed to calculate all test statistics and permutation test statistics for the specified chunks.
 
 Running on a cluster or in parallel: The which_chunks argument is intended to facilitate breaking a very large job into many small
 jobs that can be easily submitted to a cluster. It can also help with resuming an analysis that was interrupted. To limit memory
@@ -83,7 +84,7 @@ for DNase-seq and similar data types. In DNase-seq data, if a position is not pr
 observed at the position so the test statistic is equal to 0. "ksmooth" is a box kernel smoother that assumes observations
 at missing positions are missing. This is appropriate for bisulfite sequencing data.
 
-Estimating s0, zmin, and z0: If s0 is not provided, it will be estimated from the data (if dry_run = "s0_only" or FALSE).
+Estimating s0, zmin, and z0: If s0 is not provided, it will be estimated from the data (if mode = "s0_only" or FALSE).
 The function will use an amount of data specified by the s0_est_size argument. If this argument is a file name, all the data
 in that file will be used. If it is an integer, the number of data points specified will be used. If fewer than 1,000,000
 data points are used, the estimate might be unstable and a warning will be given. If zmin is missing, it will be set to the
