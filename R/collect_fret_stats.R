@@ -33,8 +33,7 @@ stats_to_rates <- function(file_list, seg_type=c("by_file", "by_chromosome", "fi
   n <- length(file_list)
   if(!missing(chromosome)) stopifnot(length(chromosome)==n)
   cat("Statistics in ", n, " files will be collected.\n")
-  #if(seg_type=="by_chromosome" & length(unique(chromosome)) == length(chromosome)) seg_type="by_file"
-  cat(seg_type, "\n")
+
   if(seg_type=="by_file"){
     rate_info <- lapply(seq(file_list), function(i){
                     rts <- fret_rates_prelim(file_list[i])

@@ -304,6 +304,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     ###############################
     # Permutation test statistics #
     ###############################
+    cat("Calculating permutations stats..\n")
     perm <-with(chunk_df, fret:::get_perm_peaks(File[file_ix], chunk_in_file, perms,
                                         nchunks[file_ix], chunksize, margin, smooth_ix_range, peak_pos_range,
                                         stat_func, lm_func, smooth_func,  bandwidth,
