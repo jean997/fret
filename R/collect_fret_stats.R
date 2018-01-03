@@ -1,117 +1,93 @@
 #' @title Collect fret_stats temporary files
 #' @description Combine temporary files from fret_stats into one file.
 #' Also determine interval boundaries.
-#' @param temp.dir Directory containing temporary files
-#' @param temp.prefix Prefix of temporary files (e.g. If your files are named
-#' test_chr1.N.RData where N is the chunk number then temp.prefix is test_chr1)
-#' @param which.chunk Vector of integers. Which chunks to collect
-#' @param out.file Name an output file
-#' @param del.temp Delete the temporary files when done?
-#' @param min.interval.width Minimum interval length when automatically determining interval endpoints
-#' @param n.perm Temporary parameter for compatibility with previous versions.
+#' @param file_list List of files produced by fret_stats
+#' @param seg_type One of "by_file", "by_chromosome", "find", "provided". See description.
+#' @param chromosome Vector the same length as file_list giving the chromosome for each file.
+#' This is only required if seg_type is not equal to by_file.
+#' @param segment_bounds Optional data frame with columns start, stop and chrom.
+#' @param min_segment_length Used if seg_type="find". Minimum segment length.
+#' Defaults to 50*bandwidth if not provided.
 #'@export
-collect_fret_stats <- function(temp.dir, temp.prefix, which.chunk, n.perm=NULL,
-                               out.file=NULL, del.temp=FALSE, min.interval.width=NULL){
-  #Do all the files exist?
-  fl_exist <- list.files(temp.dir, pattern = temp.prefix, full.names = TRUE)
-  fl <- paste0(temp.dir,"/", temp.prefix, ".", which.chunk, ".RData")
-  stopifnot(all(fl %in% fl_exist))
-  n <- length(fl)
-  stopifnot(n > 0)
-  cat(n, " files to collect.\n")
+stats_to_rates <- function(file_list, seg_type=c("by_file", "by_chromosome", "find", "provided"),
+                           chromosome, segment_bounds,
+                           min_segment_length=NULL){
 
-  R <- getobj(fl[1])
-  sts <- R$sts
-  chrom <- R$chrom
-  zmin <- R$zmin
-  ##TEMPORARY
-  #if(is.null(R$n.perm)){
-  #  if(is.null(n.perm)) stop("Please manually supply n.perm since these files are an older version")
-  #  else{
-  #    R$n.perm <- n.perm
-  #  }
-  #}else{
-    n.perm <- R$n.perm
-  #}
-  ###
-  #k keeps track of how much information is in the temporary files
-  k <- 1
-  if("sts.smooth" %in% names(R)){
-    sts.smooth <- R$sts.smooth
-    k <- k+1
-  }
-  if("m1" %in% names(R)){
-    m1 <- R$m1
-    k <- k+1
-  }
-  if("mperm" %in% names(R)){
-    perm.var <- R$perm.var
-    #This part is also temporary since I originally wasn't storing the permutation number
-    if(ncol(R$mperm)==6){
-      R$mperm$perm <- get_perm_num(R$mperm$ix1, n.perm)
-    }
-    ###
-    mperm <- R$mperm
-    k <- k+1
-  }
-  for(f in fl[-1]){
-    cat(f, "..")
-    R <- getobj(f)
-    stopifnot(R$chrom == chrom)
-    stopifnot(R$zmin == zmin)
-    ##TEMPORARY if statement
-    if(!is.null(R$n.perm)) stopifnot(R$n.perm==n.perm)
-    ##
-    sts <- rbind(sts, R$sts)
-    if(k > 1) sts.smooth <- rbind(sts.smooth, R$sts.smooth)
-    if(k > 2) m1 <- rbind(m1, R$m1)
-    if(k > 3){
-      perm.var <-rbind(perm.var, R$perm.var)
-      if(ncol(R$mperm)==6){
-        R$mperm$perm <- get_perm_num(R$mperm$ix1, n.perm)
-      }
-      mperm <- rbind(mperm, R$mperm)
-    }
-  }
-  if(k > 2) m1$chr <- chrom
-  if(k > 3) mperm$chr <- chrom
-  cat("\n")
-  R$sts <- sts
-  if(k > 1) R$sts.smooth <- sts.smooth
-  if(k > 2) R$m1 <- m1
-  if(k > 3){
-    R$mperm <- mperm
-    R$perm.var <- perm.var
-  }
-  if(is.null(min.interval.width)) min.interval.width=50*R$bandwidth
-  if(k > 3){
-    sb <- find_segments(vv=R$perm.var$var, pos=R$perm.var$pos, min.length=min.interval.width)
-    R$seg.bounds <- data.frame("chr"=rep(R$chrom, nrow(sb)), "start"=sb[,1], "stop"=sb[,2])
-  }
-  #Temporary
-  #if(is.null(R$n.perm)) R$n.perm <- n.perm
+  #Options
+  seg_type <- match.arg(seg_type)
+  if(seg_type!="by_file" & missing(chromosome)) stop("chromosome must be provided unless seg_type=\"by_file\".\n")
+  R <- readRDS(file_list[1])
+  if(!missing(segment_bounds) & !seg_type=="find") stop("segment_bounds is only required for seg_type = \"find\".\n")
 
-  if(is.null(out.file)){
-    if(k > 3) R <- fret_rates_prelim(fret.obj=R, parallel=FALSE, save.file=NULL)
-    return(R)
+  if(seg_type=="find"){
+    if(is.null(min_segment_length)){
+      min_segment_length <- 50*R$bandwidth
+    }
+    cat("Segments will be determined from the data. Minimum segment length: ", min_segment_length, "\n")
   }
-  fret_rates_prelim(fret.obj=R, parallel=FALSE, save.file=out.file)
-  if(del.temp){
-    for(f in fl) unlink(f)
+  if(seg_type=="provided"){
+    if(missing(segment_bounds)) stop("If seg_type=\"provided\", segment_bounds must be provided.\n")
+    stopifnot(all(c("start", "stop", "chrom") %in% names(segment_bounds)))
   }
-  return(0)
+
+  n <- length(file_list)
+  if(!missing(chromosome)) stopifnot(length(chromosome)==n)
+  cat("Statistics in ", n, " files will be collected.\n")
+  #if(seg_type=="by_chromosome" & length(unique(chromosome)) == length(chromosome)) seg_type="by_file"
+  cat(seg_type, "\n")
+  if(seg_type=="by_file"){
+    rate_info <- lapply(seq(file_list), function(i){
+                    rts <- fret_rates_prelim(file_list[i])
+                    rts$segment_info$segment <- i
+                    rts$peaks$segment <- i
+                    rts
+                  })
+      peaks <- do.call(rbind, lapply(rate_info, function(x){x$peaks}))
+      segment_info <- do.call(rbind, lapply(rate_info, function(x){x$segment_info}))
+      peaks <- fret_rates(peaks, segment_info)
+      return(list("peaks"=peaks, "segment_info" = segment_info))
+  }
+
+  if(seg_type=="by_chromosome"){
+    chrs <- unique(chromosome)
+    rate_info <- lapply(chrs, function(c){
+      rts <- fret_rates_prelim(file_list[chromosome==c])
+      rts$segment_info$segment <- c
+      rts$peaks$segment <- c
+      rts
+    })
+    peaks <- do.call(rbind, lapply(rate_info, function(x){x$peaks}))
+    segment_info <- do.call(rbind, lapply(rate_info, function(x){x$segment_info}))
+    peaks <- fret_rates(peaks, segment_info)
+    return(list("peaks"=peaks, "segment_info" = segment_info))
+  }
+  chrs <- unique(chromosome)
+  if(seg_type=="find"){
+    sbs <- lapply(chrs, function(c){
+      fl <- file_list[chromosome==c]
+      dat <- lapply(fl, function(file){
+        f <- readRDS(file)
+        f$stats[, c("pos", "perm_var")]
+      })
+      dat <- do.call(rbind, dat)
+      sb <- find_segments(dat[,2], dat[,1], min_segment_length)
+      sb$chrom <- c
+      sb
+    })
+    segment_bounds <- do.call(rbind, sbs)
+  }
+  rate_info <- lapply(chrs, function(c){
+    sb <- filter(segment_bounds, chrom==c)
+    sb <- sb[order(sb$start),]
+    rts <- fret_rates_prelim(file_list[chromosome==c], segment_bounds=sb)
+    rts$segment_info$chrom <- c
+    rts$segment_info$segment <- paste0(c, "-", rts$segment_info$segment)
+    rts$peaks$segment <- paste0(c, "-", rts$peaks$segment)
+    rts
+  })
+  peaks <- do.call(rbind, lapply(rate_info, function(x){x$peaks}))
+  segment_info <- do.call(rbind, lapply(rate_info, function(x){x$segment_info}))
+  peaks <- fret_rates(peaks, segment_info)
+  return(list("peaks"=peaks, "segment_info" = segment_info))
 }
 
-get_perm_num <- function(ix1, n.perm){
-  N <- length(ix1)
-  xx <- ix1[1:(N-1)] < ix1[2:N]
-  ix <- c(1, which(!xx)+1, N+1)
-  len <- diff(ix)
-  if(length(len) < n.perm){
-    perms <- sort(sample(1:n.perm, length(len), replace=FALSE))
-    perm <- rep(perms, len)
-  }else{
-    perm <- rep(1:n.perm, len)
-  }
-  return(perm)
-}

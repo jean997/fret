@@ -1,140 +1,159 @@
 #' Calculate per-base error rates for original and permutation peaks
-#'@param fret.obj Either a fret object or a file containing a fret object
-#'@param segment.bounds Optional data frame of segment bounds. If ommitted
-#'then fret.obj should contain an item `seg.bounds` which will be used instead.
-#'@param parallel Run in parallel?
+#'@param fret_obj fret object or a file name or a vector of file names.
+#'@param segment_lengths data frame with (at least) two columns: segment and length in base-pairs
+#'@param segment_bounds data frame with (at least) two columns: start and stop base pair position
 #'@export
-fret_rates_prelim <- function(fret.obj, segment.bounds=NULL,
-                              parallel=FALSE, save.file=NULL){
-  if(class(fret.obj)=="character") fret.obj <- getobj(fret.obj)
+fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
 
-  stopifnot(all(c("m1", "mperm") %in% names(fret.obj)))
 
-  if(is.null(segment.bounds)){
-    stopifnot("seg.bounds" %in% names(fret.obj))
-    segment.bounds <- fret.obj$seg.bounds
-  }
-  stopifnot(all(c("chr", "start", "stop") %in% names(segment.bounds)))
-  s <- length(fret.obj$zmin)
-  stopifnot(s %in% c(1, 2))
-  K <- nrow(segment.bounds)
-  cat("There are ", K, " segments.\n")
-  segment.bounds$nbp <- segment.bounds$stop-segment.bounds$start + 1
-  if(s==1){
-    segment.bounds$max_lambda_perbase <- rep(NA, K)
+  if(class(fret_obj)=="character"){
+    dat <- lapply(fret_obj, function(file){
+        f <- readRDS(file)
+        f$peaks$label <- f$label
+        list("peaks" = f$peaks, "perm_peaks" = f$perm_peaks,
+             "range" = f$range, "n_perm" = f$n_perm, "zmin" = f$zmin)
+    })
+    peaks <- do.call(rbind, lapply(dat, function(x){x$peaks}))
+    perm_peaks <- do.call(rbind, lapply(dat, function(x){x$perm_peaks}))
+    size <- do.call(sum, lapply(dat, function(x){x$range[2]-x$range[1] + 1}))
+    n_perm <- sapply(dat, function(x){x$n_perm})
+    stopifnot(all(n_perm==n_perm[1]))
+    n_perm <- n_perm[1]
+    zmin <- sapply(dat, function(x){x$zmin})
+    stopifnot(all(zmin==zmin[1]))
+    zmin <- zmin[1]
   }else{
-    segment.bounds$max_lambda_perbase_pos <- rep(NA, K)
-    segment.bounds$max_lambda_perbase_neg <- rep(NA, K)
+    peaks <- fret_obj$peaks
+    peaks$label <- fret_obj$label
+    perm_peaks <- fret_obj$perm_peaks
+    size <- fret_obj$range[2]-fret_obj$range[1] + 1
+    n_perm <- fret_obj$n_perm
+    zmin <- fret_obj$zmin
   }
-  mlp_ix <- grep("max_lambda", names(segment.bounds))
 
-  #Match peaks to segments
-  fret.obj$m1$segment <- match_segments(chr=fret.obj$m1$chr, pos=fret.obj$m1$pos,
-                                        segment.bounds = segment.bounds, parallel=parallel)
+  if(!missing(segment_bounds)){
+    if(!missing(segment_lengths)) warning("both segment_bounds and segment_lengths were provided. segment_lengths will be ignored.\n")
+    if(!all(segment_bounds$chrom == segment_bounds$chrom[1])) stop("Please only provide one chromosome at a time.\n")
+    k <- nrow(segment_bounds)
+    gaps <- segment_bounds$start[-1]-segment_bounds$stop[-k]
+    stopifnot(all(gaps >=0))
+    stopifnot(all(segment_bounds$stop > segment_bounds$start))
+    brks <- sort(unlist(segment_bounds[, c("start", "stop")]))
 
-  nsegs1 <- sapply(1:K, FUN=function(i){ sum(fret.obj$m1$segment==i)})
+    segs <- findInterval(peaks$pos, brks)
+    if(!all(segs %%2 == 1)) stop("Some peaks are not in given segments.\n")
+    peaks$segment <- (segs+1)/2
 
-  fret.obj$mperm$segment <- match_segments(chr=fret.obj$mperm$chr, pos=fret.obj$mperm$pos,
-                                           segment.bounds = segment.bounds, parallel=parallel)
+    segs <- findInterval(perm_peaks$pos, brks)
+    if(!all(segs %%2 == 1)) stop("Some permutation peaks are not in given segments.\n")
+    perm_peaks$segment <- (segs+1)/2
+    segment_bounds$length <- with(segment_bounds, stop-start+1)
+    segment_bounds$segment <- seq(nrow(segment_bounds))
+    segment_lengths <- segment_bounds
+    cat(segment_bounds$chrom[1], "\n")
+  }
 
-  nsegsperm <- sapply(1:K, FUN=function(i){ sum(fret.obj$mperm$segment==i)})
 
-  #For each peak in m1 and mperm we want to find the value of lambda
+  has_segment_main <- "segment" %in% names(peaks)
+  has_segment_peak <- "segment" %in% names(perm_peaks)
+  stopifnot(has_segment_main==has_segment_peak)
+  if(!has_segment_main){
+    peaks$segment <- 1
+    perm_peaks$segment <- 1
+    if(missing(segment_lengths)){
+      segment_lengths <- data.frame("segment" = 1, length=size)
+    }
+  }
+  stopifnot(all(c("segment", "length") %in% names(segment_lengths)))
+
+  npeaks <- peaks %>% group_by(segment) %>% summarize(np=n())
+  nperm_peaks <- perm_peaks %>% group_by(segment) %>% summarize(npp=n())
+  n <- full_join(npeaks, nperm_peaks, by="segment") %>%
+    full_join(., segment_lengths, by="segment") %>%
+  mutate("np" = recode(np, .missing=as.integer(0)),
+         "npp" = recode(npp, .missing=as.integer(0)))
+  if(any(is.na(n$length))) stop("Not all segment lengths were provided.\n")
+
+
+  n$max_lambda_perbase <- 0
+  #For each peak in peaks and perm_peaks we want to find the value of lambda
   #at the max height of the peak.
   #We also want to find the overall maximum achievable lambda in each segement.
   #This is important since some segments have a very low max lambda
   #(e.g. we almost never see a permutation peak above z0 in these segments)
 
-  fret.obj$m1$lambda_perbase <- rep(0, nrow(fret.obj$m1))
-  fret.obj$mperm$lambda_perbase <- rep(0, nrow(fret.obj$mperm))
-  for(i in 1:K){
-    if(i %% 10 == 1) cat(i, "..")
-    #No peaks in data and almost no peaks in permutations
-    if(nsegs1[i]==0 & nsegsperm[i] < 2){
-      segment.bounds[i, mlp_ix] <- 0
+  peaks$lambda_perbase <- 0
+
+  for(i in seq(n$segment)){
+    k <- n$segment[i]
+    cat(k, "..")
+    #No or almost no permutation peaks above z0 --> max_lambda = 0; lambda per base of any peak in data is 0
+    if(n$npp[i] <2 ){
+      n$max_lambda_perbase[i] = 0
+      peaks <- mutate(peaks, lambda_perbase = if_else(segment==k, true=0, false=lambda_perbase))
       next
     }
-    #No permutation peaks above z0 but there are peaks above zmin in data
-      #i.e. highly significant but cant estimate significance
-      #because all perm peaks are too low
-      #probably very rare
-    if(nsegs1[i] > 0 & nsegsperm[i] ==0){
-      m1.ix <- which(max1$segment==i)
-      segment.bounds[i, mlp_ix] <- 0
-      fret.obj$m1$lambda_perbase[m1.ix] <- 0
-      next
-    }
-    #Rates for permutation peaks
-    perm.ix <- which(fret.obj$mperm$segment==i)
-    m <- fret.obj$mperm$mx[perm.ix]
-    o <- order(m, decreasing=TRUE)
-    oinv <- match(1:length(m), o)
-    ll <- fret:::lamtab(mx=m, zmin=fret.obj$zmin, nbp = segment.bounds$nbp[i], n.perm=fret.obj$n.perm)
-    fret.obj$mperm$lambda_perbase[perm.ix] <- ll[,2][oinv]
+
+    lpb <-  filter(perm_peaks, segment==k) %>% dplyr::select(mx) %>%
+            mutate( "mx" = sort(mx, decreasing=TRUE),
+              "lambda_per_base" = (seq(n$npp[i])/(n_perm*n$length[i])))
+
     #Find maximum possible lambda value (i.e. rate at zmin)
-    if(s==1){
-      segment.bounds$max_lambda_perbase[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin, np=10)
-    }else{
-      segment.bounds$max_lambda_perbase_pos[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[1], np=10)
-      segment.bounds$max_lambda_perbase_neg[i] <- fret:::get_rate_with_thresh(ll, fret.obj$zmin[2], np=10)
-    }
-    #fret.obj$mperm[perm.ix, ] <- fret.obj$mperm[perm.ix,][o,]
-    if(nsegs1[i] > 0){
-      m1.ix <- which(fret.obj$m1$segment==i)
-      rts <- sapply(fret.obj$m1$mx[m1.ix], FUN=function(thresh){
-          fret:::get_rate_with_thresh(ll, thresh, np=10)
-      })
-      fret.obj$m1$lambda_perbase[m1.ix] <- rts
+    n$max_lambda_perbase[i] <- get_rate_with_thresh(zmin, lpb, num_points_project=10)
+
+    if(n$np[i] > 0){
+      rts <- filter(peaks, segment==k) %>% dplyr::select(mx) %>%
+             unlist(.) %>%
+             get_rate_with_thresh(thresh = ., lpb, num_points_project=10)
+      peaks$lambda_perbase[peaks$segment==k] <- rts
     }
   }
-  fret.obj$seg.bounds <- segment.bounds
-  if(!is.null(save.file)){
-    save(fret.obj, file=save.file)
-    return(0)
-  }
-  return(fret.obj)
+  return(list("peaks" = peaks, "segment_info" = n))
 }
 
 
-#In one segment, at a partiucular threshold, what is the rate of false discoveries?
-#ll produced by lamtab. Two columns. First column is threshold. Second column is perbase fdr
-#ll is assumed to be sorted so that the first column is decreasing.
-#np If thresh is larger than the largest threshold or smaller than the smallest threshold
-# in the first column of ll then we estimate the rate by fitting a line and projecting.
-#np controls how many points to use when fitting the line.
-get_rate_with_thresh <- function(ll, thresh, np=10){
-  #For signed threshold, if fewer than np permutation peaks
-    # have sign matching the sign of threshold
-  sgn <- sign(ll[,1])
-  if(sum(sgn==sign(thresh)) < np){
-    if(sum(sgn==sign(thresh)) < 2) return(0)
-    ll <- ll[sgn==sign(thresh),]
-    ff <- lm(log10(ll[,2])~ ll[, 1])
-    return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
+#If thresh is larger than the largest permutation peak then we extrapolate lambda per base using
+# the top num_points_project points and linear regression
+# Otherwise we use loess
+
+get_rate_with_thresh <- function(thresh, lpb, num_points_project=10){
+  stopifnot(all(diff(lpb$mx) <= 0))
+  stopifnot(all(diff(lpb$lambda_per_base) >= 0))
+  if(nrow(lpb) < num_points_project){
+    warning("Fewer permutations than desired for projection. Consider running more permutations?\n")
+    num_points_project <- nrow(lpb)
   }
-  #If there is enough data we will use the np points that surround the target
-  ll <- ll[sgn==sign(thresh),]
-  ii <- order(c(thresh-ll[,1], 0))
-  N <- nrow(ll) + 1
-  zero_ii <- which(ii==N)
-  if((zero_ii-1) < floor(np/2)){
-    nneg <- zero_ii -1
-    npos <- np-nneg
-  }else if((N-zero_ii) < ceiling(np/2)){
-    npos <- N-zero_ii
-    nneg <- np-npos
-  }else{
-    nneg <- floor(np/2)
-    npos <- ceiling(np/2)
+  #fit_lo <- loess(log10(lambda_per_base) ~ mx, data=lpb)
+  fit_sp <- with(lpb, splinefun(x=mx, y=log10(lambda_per_base)))
+  preds <- 10^(fit_sp(thresh))
+  #if(any(is.na(preds) & thresh < max(lpb$mx))) stop("Something went wrong with loess smoothing..\n")
+  if(any(thresh > lpb$mx[2])){
+    miss_ix <- which(thresh > lpb$mx[2])
+    fit_lin <- lm(log10(lambda_per_base) ~ mx, data=lpb[seq(num_points_project),])
+    pred_miss <- 10^(predict(fit_lin, newdata = data.frame("mx" = thresh[miss_ix])))
+    preds[miss_ix] <- pred_miss
   }
-  if(nneg == 0){
-    ix <- ii[2:(np+1)]
-  }else if(npos==0){
-    ix <- ii[(N-np):(N-1)]
-  }else{
-    ix <- ii[(zero_ii -nneg):(zero_ii-1)]
-    ix <- c(ix, ii[(zero_ii + 1):(zero_ii + npos)])
+  return(preds)
+}
+
+
+get_thresh_with_rate <- function(rates, lpb, range = range(lpb$mx),
+                                 num_points_project=10, napprox=100){
+  stopifnot(all(diff(lpb$mx) <= 0))
+  stopifnot(all(diff(lpb$lambda_per_base) >= 0))
+  if(nrow(lpb) < num_points_project){
+    warning("Fewer permutations than desired for projection. Consider running more permutations?\n")
+    num_points_project <- nrow(lpb)
   }
-  ff <- lm(log10(ll[ix, 2])~ll[ix, 1])
-  return(10^(ff$coefficients[2]*thresh + ff$coefficients[1]))
+
+  mxapprox <- seq(range[1], range[2], length.out=napprox)
+  lpbapprox <- get_rate_with_thresh(thresh=mxapprox, lpb, num_points_project)
+  preds <- approx(x=log10(lpbapprox), y=mxapprox, xout = log10(rates))$y
+  #if(any(rates < lpb$lambda_per_base[2])){
+  #  miss_ix <- which(rates < min(lpb$lambda_per_base))
+  #  fit_lin <- lm(log10(lambda_per_base)~mx, data=lpb[seq(num_points_project),])
+  #  pred_miss <- (log10(rates[miss_ix]) - fit_lin$coefficients[1])/fit_lin$coefficients[2]
+  #  preds[miss_ix] <- pred_miss
+  #}
+  return(preds)
 }
