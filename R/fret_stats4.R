@@ -83,10 +83,11 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
                                                        s0_est_size, "was provided\n"))
   }
   stopifnot(floor(chunksize) == chunksize & chunksize > 0)
-  if(!which_chunks=="all"){
-    stopifnot(class(which_chunks)=="numeric")
+  if(class(which_chunks) == "numeric" | class(which_chunks)=="integer"){
     stopifnot(all(floor(which_chunks)==which_chunks))
     stopifnot(all(diff(which_chunks) == 1))
+  }else{
+    stopifnot(which_chunks=="all")
   }
   #stat type
   use_par <- cores > 1
@@ -266,6 +267,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     file_ix <- with(chunk_df, which( first_chunk <=  chunk & last_chunk >= chunk))
     chunk_in_file <- chunk-chunk_df$first_chunk[file_ix] + 1
     tfile <- paste0(temp_dir, temp_prefix, "-", labels[file_ix], ".", chunk_in_file, ".RDS")
+    R_temp$label <- labels[file_ix]
     cat("Analyzing chunk ", chunk, ". Results to be saved to ", tfile, ".\n")
     cat("Calculating test statistics..\n")
     ###############################################
@@ -286,7 +288,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     }
     if(!chunk_in_file == chunk_df$nchunks[file_ix]){
       smooth_ix_range[2] <- smooth_ix_range[2]-ceiling(bandwidth/2)
-      peak_pos_range[2] <- R_temp$stats$pos[ margin + 1 + chunksize]
+      peak_pos_range[2] <- with(R_temp$stats, pos[ length(pos)-margin -1])
     }
     cat("Smoothing..\n")
     R_temp$stats$stat_smoothed <- with(R_temp$stats, smooth_func(x=pos, y=stat,xout=pos, bandwidth = bandwidth))
@@ -302,11 +304,14 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     ###############################
     # Permutation test statistics #
     ###############################
-    R_temp$perm_peaks <-with(chunk_df, fret:::get_perm_peaks(File[file_ix], chunk_in_file, perms,
+    perm <-with(chunk_df, fret:::get_perm_peaks(File[file_ix], chunk_in_file, perms,
                                         nchunks[file_ix], chunksize, margin, smooth_ix_range, peak_pos_range,
                                         stat_func, lm_func, smooth_func,  bandwidth,
                                         X, trait, covariates, s0, z0, zmin,
                                         pheno_transformation=NULL))
+    R_temp$perm_peaks <- perm$perm_peaks
+    R_temp$stats$perm_var <- perm$perm_var[smooth_ix_range[1]:smooth_ix_range[2]]
+    R_temp$range <- peak_pos_range
     saveRDS(R_temp, file=tfile)
   }
   #if(!length(which.chunks)==nchunk){
