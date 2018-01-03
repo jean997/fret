@@ -44,14 +44,17 @@ get_perm_peaks <- function(file_name, chunk, perms,
   }
   pos_out <- dat$pos[smooth_ix_range[1]:smooth_ix_range[2]]
   perm_stats <- apply(perms, 2, function(ix){
-    sts <- t(stat_func(Y=dat[, -1], x=X[[trait]][ix],s0=s0))[,3]
+    t(stat_func(Y=dat[, -1], x=X[[trait]][ix],s0=s0))[,3]
+  })
+  perm_var <- apply(perm_stats, 1, var)
+  perm_peaks <- apply(perm_stats, 2, function(sts){
     sm_sts <- smooth_func(x=dat$pos, y=sts, xout=pos_out, bandwidth=bandwidth)
     mxlist(sm_sts, z0, zmin, pos=pos_out) #%>%
             #filter(mx > zmin) %>%
            # filter(pos >= peak_pos_range[1] & pos <= peak_pos_range[2])
   })
-  perm_stats <- as.data.frame(do.call(rbind, perm_stats))
-  names(perm_stats) <- c("mx", "pos", "start", "stop", "ix1", "ix2")
+  perm_peaks <- as.data.frame(do.call(rbind, perm_peaks))
+  names(perm_peaks) <- c("mx", "pos", "start", "stop", "ix1", "ix2")
   close(df_laf)
-  return(perm_stats)
+  return(list("perm_var"=perm_var, "perm_peaks"=perm_peaks))
 }
