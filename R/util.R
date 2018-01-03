@@ -1,20 +1,3 @@
-#'@export
-strsplit_helper <- function(list, split, field, fixed=FALSE){
-  x <- unlist(lapply(list, FUN=function(x){
-    unlist(strsplit(x, split, fixed=fixed))[field]}))
-}
-
-#Coppied from GWAS Tools
-#' Get an object from an .RData file
-#' @export
-getobj <- function (Rdata){
-  objname <- load(Rdata)
-  if (length(objname) > 1) {
-    warning(paste("Multiple objects stored in file", Rdata,
-                  "\nReturning only the first object"))
-  }
-  return(get(objname))
-}
 
 #'@export
 excursions <- function(ys, z0){
@@ -44,7 +27,11 @@ mxlist <- function(ys, z0, zmin, pos = NULL){
 
   if(length(z0)==1){
     stopifnot(z0 > 0 & zmin >= z0)
-    if(all(abs(ys) < z0)) return(NULL)
+    if(all(abs(ys) < z0)){
+      dat <- as.data.frame(matrix(nrow=0, ncol=6))
+      names(dat) <- c("mx", "pos", "start", "stop", "ix1", "ix2")
+      return(dat)
+    }
     #Excursions at z0
     ivls <- excursions(ys, z0)
     #Max stat value inside each excurion
@@ -74,51 +61,4 @@ mxlist <- function(ys, z0, zmin, pos = NULL){
   dat <- data.frame("mx"=mxs, "pos"=pos[ixs], "start"=pos[ivls[,1]], "stop"=pos[ivls[,2]],
                       "ix1"=ivls[,1], "ix2"=ivls[,2])
   return(dat)
-}
-
-#'@export
-lamtab <- function(mx, zmin, nbp, n.perm){
-  stopifnot(length(zmin) %in% c(1, 2))
-  mx <- sort(mx, decreasing=TRUE)
-  if(length(zmin)==1){
-    stopifnot(all(mx > 0))
-    return(cbind(mx, (1:length(mx))/(n.perm*nbp)))
-  }else{
-    ct <- c()
-    npos <- sum(mx > 0)
-    if(npos > 0) ct <- 1:npos
-    nneg <- sum(mx < 0)
-    if(nneg > 0) ct <- c(ct, nneg:1)
-    return(cbind(mx,  ct/(n.perm*nbp)))
-  }
-}
-
-
-match_segments <- function(chr, pos, segment.bounds,
-                           parallel=FALSE, cores=parallel::detectCores()-1){
-  chroms <- unique(chr)
-  ix <- rep(NA, length(chr))
-  if(parallel){
-    cl <- makeCluster(cores, type="FORK")
-    on.exit(stopCluster(cl))
-  }
-  for(c in chroms){
-    cat(c, "..")
-    ix_dat <- which(chr==c)
-    ix_sb <- which(segment.bounds$chr==c)
-    stopifnot(all(pos[ix_dat] <= max(segment.bounds$stop[ix_sb])))
-    if(parallel){
-      slocal <- parSapply(cl, pos[ix_dat], FUN=function(p){
-        which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
-      })
-    }else{
-      slocal <- sapply(pos[ix_dat], FUN=function(p){
-        which.min(c(segment.bounds$start[ix_sb], Inf) <= p)-1
-      })
-    }
-    stopifnot(all(pos[ix_dat]) <= segment.bounds$stop[slocal])
-    stopifnot(length(ix[ix_dat])== length(ix_sb[slocal]))
-    ix[ix_dat] <- ix_sb[slocal]
-  }
-  return(ix)
 }
