@@ -1,6 +1,9 @@
 #'@import MASS
 #'@import parallel
 #'@import LaF
+#'@import stringr
+#'@import dplyr
+#'@import stringr
 
 
 #'@title Calculate Huber test statistics
