@@ -6,11 +6,11 @@
 #' regions.
 #' @param vv Variance of smoothed permutation test statistics
 #' @param pos Position vector. Should be the same length as vv
-#' @param min.length Minimum interval length
-#' @param q Quantile for upper limit for definition of high variance region. Currently 0.05
+#' @param min_length Minimum interval length
+#' @param q Quantile for upper limit for definition of high variance region.
 #' @return 2 by K matrix listing interval endpoints.
 #'@export
-find_segments <- function(vv, pos, min.length, q=0.05){
+find_segments <- function(vv, pos, min_length, q=0.05){
   stopifnot(length(vv)==length(pos))
   stopifnot(all(vv >= 0))
   z0 <- quantile(vv, 0.5)
@@ -33,7 +33,7 @@ find_segments <- function(vv, pos, min.length, q=0.05){
   i <- 1
   n <- 1
   while(max(stps, warn=FALSE) < pos[p]){
-    min.end <- strts[i] + min.length-1
+    min.end <- strts[i] + min_length-1
     if(any(strts[i] <= bp[,1] & min.end >= bp[,1])){
       #Interval contains high variance regions
       #Make interval as short as possible
@@ -57,11 +57,11 @@ find_segments <- function(vv, pos, min.length, q=0.05){
   }
   strts <- strts[-i]
   i <- i-1
-  if(strts[i]-stps[i]+1 < min.length){
+  if(strts[i]-stps[i]+1 < min_length){
     strts <- strts[-i]
     stps <- stps[-i]
     i <- i-1
     stps[i] <- pos[p]
   }
-  return(cbind(strts, stps))
+  return(data.frame("start"=strts, "stop"=stps))
 }
