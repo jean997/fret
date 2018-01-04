@@ -312,7 +312,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
                                         X, trait, covariates, s0, z0, zmin,
                                         pheno_transformation=NULL))
     R_temp$perm_peaks <- perm$perm_peaks
-    R_temp$stats$perm_var <- perm$perm_var[smooth_ix_range[1]:smooth_ix_range[2]]
+    R_temp$stats$perm_var <- perm$perm_var
     R_temp$range <- peak_pos_range
     saveRDS(R_temp, file=tfile)
   }
