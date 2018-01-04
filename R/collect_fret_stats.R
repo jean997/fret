@@ -76,7 +76,7 @@ stats_to_rates <- function(file_list, seg_type=c("by_file", "by_chromosome", "fi
     segment_bounds <- do.call(rbind, sbs)
   }
   rate_info <- lapply(chrs, function(c){
-    sb <- filter(segment_bounds, chrom==c)
+    sb <- dplyr::filter(segment_bounds, chrom==c)
     sb <- sb[order(sb$start),]
     rts <- fret_rates_prelim(file_list[chromosome==c], segment_bounds=sb)
     rts$segment_info$chrom <- c
