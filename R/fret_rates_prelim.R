@@ -9,7 +9,7 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
   if(class(fret_obj)=="character"){
     dat <- lapply(fret_obj, function(file){
         f <- readRDS(file)
-        f$peaks$label <- f$label
+	f$peaks <- f$peaks %>%  mutate("label"=f$label)
         list("peaks" = f$peaks, "perm_peaks" = f$perm_peaks,
              "range" = f$range, "n_perm" = f$n_perm, "zmin" = f$zmin)
     })
@@ -23,8 +23,7 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
     stopifnot(all(zmin==zmin[1]))
     zmin <- zmin[1]
   }else{
-    peaks <- fret_obj$peaks
-    peaks$label <- fret_obj$label
+    peaks <- fret_obj$peaks %>% mutate("label"=fret_obj$label)
     perm_peaks <- fret_obj$perm_peaks
     size <- fret_obj$range[2]-fret_obj$range[1] + 1
     n_perm <- fret_obj$n_perm
