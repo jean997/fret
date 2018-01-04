@@ -205,6 +205,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
             "trait"=trait, "covariates"=covariates,
             "pheno_transformation"=pheno_transformation, "n_perm"=n_perm,
             "bandwidth"=bandwidth, "smoother"=smoother)
+  if(!missing(seed)) R$seed <- seed
 
   #####################################
   # Calculate s0, z0, zmin if missing #
