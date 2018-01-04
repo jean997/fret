@@ -48,8 +48,12 @@ get_perm_peaks <- function(file_name, chunk, perms,
     sts <- t(stat_func(Y=dat[, -1], x=X[[trait]][ix],s0=s0))[,3]
     smooth_func(x=dat$pos, y=sts, xout=pos_out, bandwidth=bandwidth)
   })
+  if(!sum(is.na(perm_stats_sm))==0){
+    cols <- unique(which(is.na(perm_stats_sm), arr.ind = TRUE)[,2])
+    cat("NAs found: ", chunk, cols, "\n")
+  }
   cat("Calculating variance of smoothed permutation statistics.\n")
-  perm_var <- apply(perm_stats_sm, 1, var)
+  perm_var <- apply(perm_stats_sm, 1, var, na.rm=TRUE)
   cat("Finding peaks in smoothed permutation statistics.\n")
   perm_peaks <- apply(perm_stats_sm, 2, function(sm_sts){
     mxlist(sm_sts, z0, zmin, pos=pos_out)
