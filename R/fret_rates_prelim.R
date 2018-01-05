@@ -9,12 +9,14 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
   if(class(fret_obj)=="character"){
     dat <- lapply(fret_obj, function(file){
         f <- readRDS(file)
-	f$peaks <- f$peaks %>%  mutate("label"=f$label)
-        list("peaks" = f$peaks, "perm_peaks" = f$perm_peaks,
+	      f$peaks <- f$peaks %>%  mutate("label"=f$label)
+	      f$stats <- f$stats %>%  mutate("label"=f$label)
+        list("peaks" = f$peaks, "perm_peaks" = f$perm_peaks, "stats" = stats,
              "range" = f$range, "n_perm" = f$n_perm, "zmin" = f$zmin)
     })
     peaks <- do.call(rbind, lapply(dat, function(x){x$peaks}))
     perm_peaks <- do.call(rbind, lapply(dat, function(x){x$perm_peaks}))
+    stats <- do.call(rbind, lapply(dat, function(x){x$stats}))
     size <- do.call(sum, lapply(dat, function(x){x$range[2]-x$range[1] + 1}))
     n_perm <- sapply(dat, function(x){x$n_perm})
     stopifnot(all(n_perm==n_perm[1]))
@@ -71,8 +73,8 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
   has_segment_peak <- "segment" %in% names(perm_peaks)
   stopifnot(has_segment_main==has_segment_peak)
   if(!has_segment_main){
-    peaks$segment <- 1
-    perm_peaks$segment <- 1
+    peaks <- peaks %>% mutate(segment = 1)
+    perm_peaks <- perm_peaks %>% mutate(segment = 1)
     if(missing(segment_lengths)){
       segment_lengths <- data.frame("segment" = 1, length=size)
     }
@@ -82,20 +84,19 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
   npeaks <- peaks %>% group_by(segment) %>% summarize(np=n())
   nperm_peaks <- perm_peaks %>% group_by(segment) %>% summarize(npp=n())
   n <- full_join(npeaks, nperm_peaks, by="segment") %>%
-    full_join(., segment_lengths, by="segment") %>%
-  mutate("np" = recode(np, .missing=as.integer(0)),
+        full_join(., segment_lengths, by="segment") %>%
+        mutate("np" = recode(np, .missing=as.integer(0)),
          "npp" = recode(npp, .missing=as.integer(0)))
   if(any(is.na(n$length))) stop("Not all segment lengths were provided.\n")
 
-
-  n$max_lambda_perbase <- 0
+  n <- n%>% mutate(max_lambda_perbase = 0)
   #For each peak in peaks and perm_peaks we want to find the value of lambda
   #at the max height of the peak.
   #We also want to find the overall maximum achievable lambda in each segement.
   #This is important since some segments have a very low max lambda
   #(e.g. we almost never see a permutation peak above z0 in these segments)
 
-  peaks$lambda_perbase <- 0
+  peaks <- peaks %>% mutate(lambda_perbase = 0)
 
   for(i in seq(n$segment)){
     k <- n$segment[i]
@@ -121,7 +122,7 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
       peaks$lambda_perbase[peaks$segment==k] <- rts
     }
   }
-  return(list("peaks" = peaks, "segment_info" = n))
+  return(list("peaks" = peaks, "segment_info" = n, "stats" = stats))
 }
 
 
