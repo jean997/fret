@@ -1,83 +1,49 @@
-#'@import MASS
-#'@import parallel
-#'@import LaF
-#'@import stringr
-#'@import dplyr
-#'@import stringr
 
-
-#'@title Calculate Huber test statistics
-#'@description Calculate Huber test statistics with variance inflation constant.
-#'@param Y matrix (p x n)
-#'@param x trait values
-#'@param s0 Additional variance
-#'@param k Threshold for huber estimator in multiples of scale parameter.
-#'@param maxit Maixum iterations to pass to rlm.
-#'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
-#'@export
-huber_stats <- function(Y, x, s0 = 0,  k=1.345, maxit=50){
-  B <- apply(Y, MARGIN=1, FUN=function(y){
-    suppressWarnings(f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit))
-    coef <- summary(f)$coefficients
-    if(nrow(coef)==1) return(c(NA, NA, 0))
-    b1 <- coef[2, 1]
-    s <- coef[2, 2]
-    if(is.na(s) & s0 > 0) return(c(b1, s, b1/s0))
-      else if(is.na(s)) return(c(b1, s, 0))
-    return(c(b1, s, b1/(s+s0)))
+stats1 <- function(Y, x, s0 = 0,  cores, stat_fun, libs = c()){
+  if(cores==1){
+    B <- data.frame(t(
+      apply(Y, MARGIN=1, FUN=function(y){
+      stat_fun(y, x, s0)
+    }))) %>% dplyr::rename("beta" ="X1", "se" = "X2", "stat" = "X3")
+    return(B)
+  }
+  cl <- makeCluster(cores, type="FORK")
+  #clusterExport(cl, varlist = c("Y", "x", "s0", "stat_fun"))
+  if(length(libs) > 0){
+    txt <- paste0("library(", libs, ")")
+    clusterCall(cl, fun=function(txt){sapply(txt, function(x){eval(parse(text=x))})},
+                txt=txt)
+  }
+  B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
+    stat_fun(y, x, s0)
   })
+  stopCluster(cl)
+  B <- data.frame(t(B)) %>% dplyr::rename("beta" ="X1", "se" = "X2", "stat" = "X3")
   return(B)
 }
 
-#'@title Calculate Huber test statistics using parallel package
-#' @description Calculate Huber test statistics with variance infaltion constant using parallel package
-#'@param Y matrix (p x n)
-#'@param x trait values
-#'@param s0 Additional variance
-#'@param k Threshold for huber estimator in multiples of scale parameter.
-#'@param maxit Maixum iterations to pass to rlm.
-#'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
-#'@export
-huber_stats_parallel <- function(Y, x, cores, s0, maxit,  k=1.345){
-
+stats_many <- function(Y, X, s0=0, cores, stat_fun, libs=c()){
+  if(cores==1){
+    B <- t(apply(Y, MARGIN=1, FUN=function(y){
+      apply(X, MARGIN=2, FUN=function(x){
+        stat_fun(y, x, s0)[3]
+      })
+    }))
+    return(B)
+  }
   cl <- makeCluster(cores, type="FORK")
-
+  #clusterExport(cl, varlist= c("Y", "X", "s0", "stat_fun"))
+  if(length(libs) > 0){
+    txt <- paste0("library(", libs, ")")
+    clusterCall(cl, fun=function(txt){sapply(txt, function(x){eval(parse(text=x))})},
+                txt=txt)
+  }
   B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
-    suppressWarnings(f <- rlm(y~x, psi=psi.huber, k=k, scale.est="Huber", maxit=maxit))
-    coef <- summary(f)$coefficients
-    if(nrow(coef)==1) return(c(NA, NA, 0))
-    b1 <- coef[2, 1]
-    s <- coef[2, 2]
-    if(is.na(s) & s0 > 0) return(c(b1, s, b1/s0))
-      else if(is.na(s)) return(c(b1, s, 0))
-    return(c(b1, s, b1/(s+s0)))
+    apply(X, MARGIN=2, FUN=function(x){
+      stat_fun(y, x, s0)[3]
+    })
   })
   stopCluster(cl)
-  return(B)
-}
-
-#'@title Calculate OLS test statistics using parallel package
-#'@description Calculate OLS test statistics using parallel package
-#'@param Y matrix (p x n)
-#'@param x trait values
-#'@param s0 Additional variance
-#'@param cores Number of cores to use
-#'@return 3 by p matrix giving coefficient estimates, sd estimates and statistic (including s0 adjustment)
-#'@export
-lm_stats_parallel <- function(Y, x, cores, s0){
-
-  cl <- makeCluster(cores, type="FORK")
-
-  B <- parApply(cl, Y, MARGIN=1, FUN=function(y){
-    f <- lm(y~x)
-    coef <- summary(f)$coefficients
-    if(nrow(coef)==1) return(c(NA, NA, 0))
-    b1 <- coef[2, 1]
-    s <- coef[2, 2]
-    if(is.na(s) & s0 > 0) return(c(b1, s, b1/s0))
-      else if(is.na(s)) return(c(b1, s, 0))
-    return(c(b1, s, b1/(s+s0)))
-  })
-  stopCluster(cl)
+  B <- t(B)
   return(B)
 }

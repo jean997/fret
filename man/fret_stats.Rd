@@ -8,10 +8,10 @@ fret_stats(pheno_file_list, trait_file, mode = c("dry_run", "s0_only",
   "full"), s0, zmin, z0 = if (!missing(zmin)) 0.3 * zmin,
   s0_est_size = pheno_file_list[1], seed, n_perm = 0,
   pheno_transformation = NULL, trait = c("x"), covariates = c(),
-  stat_type = c("huber", "lm"), huber_maxit = 50, bandwidth = 151,
-  smoother = c("ksmooth_0", "ksmooth"), chunksize = 1e+05,
-  which_chunks = "all", temp_dir = "./", temp_prefix = NULL,
-  labels = pheno_file_list, cores = 1)
+  stat_type = c("huber", "lm", "qp", "custom"), stat_fun = NULL,
+  libs = c(), bandwidth = 151, smoother = c("ksmooth_0", "ksmooth"),
+  chunksize = 1e+05, which_chunks = "all", temp_dir = "./",
+  temp_prefix = NULL, labels = pheno_file_list, cores = 1)
 }
 \arguments{
 \item{pheno_file_list}{Name or vector of names of genomic phenotype files}
@@ -45,8 +45,6 @@ and outputting the transformed phenotype.}
 
 \item{stat_type}{Type of test statistis. May be one of "huber" or "lm".}
 
-\item{huber_maxit}{Maximum iterations for Huber estimator.}
-
 \item{bandwidth}{Smoothing bandwidth}
 
 \item{chunksize}{Size of chunks to read at one time}
@@ -60,6 +58,8 @@ and outputting the transformed phenotype.}
 \item{labels}{Vector of labels for each phenotype file. These will be used in results tables and also in temporary file names.}
 
 \item{cores}{Number of cores to use. Using more than one requires the parallel package.}
+
+\item{huber_maxit}{Maximum iterations for Huber estimator.}
 
 \item{smooother}{Choice of smoother for smoothing test statistics. Can be
 one of "ksmooth_0"  or "ksmooth". See details below.}

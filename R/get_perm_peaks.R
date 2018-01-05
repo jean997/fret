@@ -1,7 +1,7 @@
 #'@export
 get_perm_peaks <- function(file_name, chunk, perms,
                            nchunks, chunksize, margin, smooth_ix_range, peak_pos_range,
-                           stat_func, lm_func, smooth_func,  bandwidth,
+                           stat_fun, resid_fun, smooth_func, cores, libs, bandwidth,
                            X, trait, covariates, s0, z0, zmin,
                            pheno_transformation=NULL){
 
@@ -37,15 +37,15 @@ get_perm_peaks <- function(file_name, chunk, perms,
   if(length(covariates) > 0){
     cat("Regressing covariates on phenotype.\n")
     dat[,-1] <- apply(dat[,-1], MARGIN=1, FUN=function(y){
-      ff <- as.formula(paste0("y~", paste0(covariates, collapse="+")))
-      fity <- lm_func(ff, X)
-      fity$residuals
+      resid_fun(y, X, covariates)
     })
   }
   pos_out <- dat$pos[smooth_ix_range[1]:smooth_ix_range[2]]
   cat("Calculating test statistics for ", ncol(perms), " permutations.\n")
-  perm_stats_sm <- apply(perms, 2, function(ix){
-    sts <- t(stat_func(Y=dat[, -1], x=X[[trait]][ix],s0=s0))[,3]
+
+  perm_traits <- apply(perms, 2, function(ix){X[[trait]][ix]})
+  perm_stats <- stats_many(Y=dat[,-1], X = perm_traits, s0, cores, stat_fun, libs)
+  perm_stats_sm <- apply(perm_stats, 2, function(sts){
     smooth_func(x=dat$pos, y=sts, xout=pos_out, bandwidth=bandwidth)
   })
   if(!sum(is.na(perm_stats_sm))==0){
@@ -53,7 +53,7 @@ get_perm_peaks <- function(file_name, chunk, perms,
     cat("NAs found: ", chunk, cols, "\n")
   }
   cat("Calculating variance of smoothed permutation statistics.\n")
-  perm_var <- apply(perm_stats_sm, 1, var, na.rm=TRUE)
+  perm_var <- apply(perm_stats_sm[pos_out >= peak_pos_range[1] &  pos_out <= peak_pos_range[2], ], 1, var, na.rm=TRUE)
   cat("Finding peaks in smoothed permutation statistics.\n")
   perm_peaks <- apply(perm_stats_sm, 2, function(sm_sts){
     mxlist(sm_sts, z0, zmin, pos=pos_out)

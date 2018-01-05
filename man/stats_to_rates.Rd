@@ -5,7 +5,8 @@
 \title{Collect fret_stats temporary files}
 \usage{
 stats_to_rates(file_list, seg_type = c("by_file", "by_chromosome", "find",
-  "provided"), chromosome, segment_bounds, min_segment_length = NULL)
+  "provided"), chromosome, segment_bounds, min_segment_length = NULL,
+  return_stats = TRUE, return_perm_peaks = TRUE)
 }
 \arguments{
 \item{file_list}{List of files produced by fret_stats}
