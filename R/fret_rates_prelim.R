@@ -11,7 +11,7 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
         f <- readRDS(file)
 	      f$peaks <- f$peaks %>%  mutate("label"=f$label)
 	      f$stats <- f$stats %>%  mutate("label"=f$label)
-        list("peaks" = f$peaks, "perm_peaks" = f$perm_peaks, "stats" = stats,
+        list("peaks" = f$peaks, "perm_peaks" = f$perm_peaks, "stats" = f$stats,
              "range" = f$range, "n_perm" = f$n_perm, "zmin" = f$zmin)
     })
     peaks <- do.call(rbind, lapply(dat, function(x){x$peaks}))
