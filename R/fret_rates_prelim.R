@@ -44,7 +44,7 @@ fret_rates_prelim <- function(fret_obj, segment_lengths, segment_bounds){
     segs <- findInterval(peaks$pos, brks)
     if(!all(segs %%2 == 1)){
       ix <- which(segs%%2==0)
-      if(all(perm_peaks$pos[ix] %in% segment_bounds$stop)){
+      if(all(peaks$pos[ix] %in% segment_bounds$stop)){
         segs[ix] <- segs[ix]-1
       }else{
         stop("Some permutation peaks are not in given segments.\n")
