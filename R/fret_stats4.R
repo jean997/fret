@@ -270,7 +270,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     if(s0miss){
       s0 <- with(stats_s0, choose_s0(beta=beta, se=se))
       stats_s0$stat <- with(stats_s0, beta/(se + s0))
-      stats_s0$stat[is.na(stats_s0$beta)] <- 0
+      stats_s0$stat[is.na(stats_s0$stat)] <- 0
     }
     if(missing(zmin)){
       stats_s0$stat_smoothed <- with(stats_s0, smooth_func(x=pos, y=stat,xout=pos, bandwidth = bandwidth))
