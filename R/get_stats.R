@@ -34,6 +34,8 @@ get_stats <- function(file_name, nchunks, chunksize, margin,
 
   #Make sure the trait data is sorted correctly
   if(!all(dm$columns$name[-1] %in% X[[sample]])){
+    nms <- dm$columns$name[-1]
+    cat(paste0(nms[!nms %in% X[[sample]]], collapse=" "), "\n")
     stop("Not all of the samples in ", file_name, " are in the trait file.\n")
   }
   X <- X[match(dm$columns$name[-1], X[[sample]]),]
