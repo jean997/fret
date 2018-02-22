@@ -59,7 +59,7 @@
 fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only", "full"),
                        s0, zmin, z0 = if(!missing(zmin)) 0.3*zmin,
                        s0_est_size = pheno_file_list[1], seed, n_perm=0,
-                       pheno_transformation=NULL, trait=c("x"), covariates=c(),
+                       pheno_transformation=NULL, trait="x", covariates=c(), sample="name",
                        stat_type=c("huber", "lm", "qp", "custom"),
                        stat_fun=NULL, resid_fun=NULL, libs=c(),
                        bandwidth=151, smoother=c("ksmooth_0", "ksmooth"),
@@ -137,9 +137,11 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   df_laf <- laf_open(dm)
   X <- df_laf[,]
   close(df_laf)
-  if(!trait %in% names(X)) stop("ERROR: I didn't find colunns matching the specified trait name in the phenotype file.\n")
-  if(!all(covariates %in% names(X))) stop("ERROR: I didn't find colunns matching the specified covariates in the phenotype file.\n")
+  if(!trait %in% names(X)) stop(paste0("ERROR: I didn't find colunns matching ", trait, " in ", trait_file, ".\n"))
+  if(!sample %in% names(X)) stop(paste0("ERROR: I didn't find colunns matching ", sample, " in ", trait_file, ".\n"))
+  if(!all(covariates %in% names(X))) stop(paste0("ERROR: I didn't find colunns matching all of ", paste0(covariates, collapse=","), " in ", trait_file, ".\n"))
   cat("Trait name: ", trait, "\n")
+  cat("Sample name collumn: ", sample, "\n")
   #Adjust trait for covariates
   if(length(covariates) > 0){
     cat("Adjusting ", trait, " for ", covariates, "\n")
@@ -240,7 +242,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     if(class(s0_est_size)=="character"){
       nc <- with(chunk_df, nchunks[File==s0_est_size])
       stats_s0 <- get_stats(s0_est_size, nc, chunksize, margin,
-                         X, trait, covariates, s0, stat_fun, resid_fun, cores, libs,
+                         X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
                          pheno_transformation, "all")
       s0_chunks <- chunk_df %>% filter(File==s0_est_size) %>% with(., first_chunk:last_chunk)
     }else{
@@ -251,7 +253,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
       s0_file_ix <- with(chunk_df, which( first_chunk <=  end_chunk_s0 & last_chunk >= start_chunk_s0))
       stats_s0 <- lapply(s0_file_ix, function(i){
         with(chunk_df, get_stats(File[i], nchunks[i], chunksize, margin,
-                  X, trait, covariates, s0, stat_fun, resid_fun, cores, libs,
+                  X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
                   pheno_transformation,
                   chunks=which(first_chunk[i]:last_chunk[i] %in% s0_chunks)))
       })
@@ -294,7 +296,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     # Calculate (non-permutation) test statistics #
     ###############################################
     R_temp$stats <- with(chunk_df, get_stats(File[file_ix], nchunks[file_ix], chunksize, margin,
-                             X, trait, covariates, s0, stat_fun, resid_fun, cores, libs,
+                             X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
                              pheno_transformation,
                              chunks=chunk_in_file))
     ######################################

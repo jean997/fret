@@ -1,6 +1,21 @@
+#'@title Helper function for calculating test statistics
+#'@param file_name Name of phenotyp file
+#'@param nchunks Number of chunks in file
+#'@param chunksize Chunk size
+#'@param margin Margin
+#'@param X Data frame of trait information
+#'@param trait String; name of trait in X
+#'@param covariates Vector of names of covariates in X
+#'@param sample String; name of sample name in X
+#'@param s0 s0
+#'@param stat_fun Function to calculate test stats
+#'@param resid_fun Function to calculate residual
+#'@param cores
+#'@param pheno_transformation Phenotype transformation
+#'@param chunks Which chunks; may only be "all" or contiguous integers
 #'@export
 get_stats <- function(file_name, nchunks, chunksize, margin,
-                       X, trait, covariates, s0, stat_fun, resid_fun,
+                       X, trait, covariates, sample, s0, stat_fun, resid_fun,
                       cores, libs,
                       pheno_transformation=NULL, chunks="all"){
   #Check chunk argument
@@ -18,10 +33,10 @@ get_stats <- function(file_name, nchunks, chunksize, margin,
   df_laf <- laf_open(dm)
 
   #Make sure the trait data is sorted correctly
-  if(!all(dm$columns$name[-1] %in% X[[1]])){
+  if(!all(dm$columns$name[-1] %in% X[[sample]])){
     stop("Not all of the samples in ", file_name, " are in the trait file.\n")
   }
-  X <- X[match(dm$columns$name[-1], X[[1]]),]
+  X <- X[match(dm$columns$name[-1], X[[sample]]),]
 
   lmargin <- rep(0, length(chunks))
   rmargin <- rep(0, length(chunks))
