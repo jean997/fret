@@ -10,7 +10,7 @@
 #' sample of test statistics (See details below).
 #' @param z0 Merging threshold. If missing z0 = 0.3*zmin.
 #' @param s0_est_size Number of test statistics used to estimate s0. Alternatively, s0_est_size may be a character
-#' string giving a phenotype file name. In this case, all test statistics from that file will be used.
+#' string giving a phenotype file name or may be "all" to use all files.
 #' @param seed Seed (used for permutations). If missing, a random seed will be chosen and stored.
 #' @param n_perm Number of permutations.
 #' If n.perm=0, only test statistics for unpermuted data will be calculated.
@@ -78,7 +78,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   smoother = match.arg(smoother)
   stopifnot(length(labels)==length(pheno_file_list))
   if(class(s0_est_size)=="character"){
-    if(!s0_est_size %in% pheno_file_list) stop(paste0(s0_est_size, " is not in list of phenotype files\n"))
+    if(!s0_est_size %in% pheno_file_list & !s0_est_size == "all") stop(paste0(s0_est_size, " is not in list of phenotype files\n"))
   }else{
     if(!floor(s0_est_size) == s0_est_size) stop(paste0("s0_est_size should be either an integer or a file name. ",
                                                        s0_est_size, "was provided\n"))
@@ -206,8 +206,13 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     if(missing(s0) & !missing(zmin)) warning(paste0("Warning: zmin is provided and s0 is not and will be estimated.",
                                          " Are you sure that's how you want to run?"))
     if(class(s0_est_size)=="character"){
-      nc <- with(chunk_df, nchunks[File==s0_est_size])
-      cat(s0_est_size, " which contains ", nc, " chunks.\n")
+      if(s0_est_size=="all"){
+        nc <- total_chunks
+        cat("all files.\n")
+      }else{
+        nc <- with(chunk_df, nchunks[File==s0_est_size])
+        cat(s0_est_size, " which contains ", nc, " chunks.\n")
+      }
     }else{
       nc <- ceiling(s0_est_size/chunksize)
       if(nc > total_chunks) stop("s0_est_chunk is larger than size of data.\n")
@@ -239,16 +244,19 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
       s0miss <- FALSE
     }
     cat("Estimating s0 and/or zmin.\n")
-    if(class(s0_est_size)=="character"){
-      nc <- with(chunk_df, nchunks[File==s0_est_size])
+    if(class(s0_est_size)=="character" & !s0_est_size=="all"){
       stats_s0 <- get_stats(s0_est_size, nc, chunksize, margin,
                          X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
                          pheno_transformation, "all")
       s0_chunks <- chunk_df %>% filter(File==s0_est_size) %>% with(., first_chunk:last_chunk)
     }else{
-      nc <- ceiling(s0_est_size/chunksize)
-      start_chunk_s0 <- sample(seq(total_chunks-nc + 1), size=1)
-      end_chunk_s0 <- start_chunk_s0 + nc -1
+      if(calss(s0_est_size)=="numeric"){
+        start_chunk_s0 <- sample(seq(total_chunks-nc + 1), size=1)
+        end_chunk_s0 <- start_chunk_s0 + nc -1
+      }else{
+        start_chunk_s0 <- 1
+        end_chunk_s0 <- total_chunks
+      }
       s0_chunks <- start_chunk_s0:end_chunk_s0
       s0_file_ix <- with(chunk_df, which( first_chunk <=  end_chunk_s0 & last_chunk >= start_chunk_s0))
       stats_s0 <- lapply(s0_file_ix, function(i){
