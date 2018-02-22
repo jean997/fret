@@ -247,7 +247,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
       s0_chunks <- chunk_df %>% filter(File==s0_est_size) %>% with(., first_chunk:last_chunk)
     }else{
       nc <- ceiling(s0_est_size/chunksize)
-      start_chunk_s0 <- sample(1:(total_chunks-nc), size=1)
+      start_chunk_s0 <- sample(seq(total_chunks-nc + 1), size=1)
       end_chunk_s0 <- start_chunk_s0 + nc -1
       s0_chunks <- start_chunk_s0:end_chunk_s0
       s0_file_ix <- with(chunk_df, which( first_chunk <=  end_chunk_s0 & last_chunk >= start_chunk_s0))
