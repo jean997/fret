@@ -30,6 +30,7 @@ get_stats <- function(file_name, nchunks, chunksize, margin,
 
   #Open pheno file
   dm <- detect_dm_csv(filename=file_name, header=TRUE, sep=" ")
+  dm$columns$type <- rep(c("integer", "double"), c(1, nrow(dm$columns)-1))
   df_laf <- laf_open(dm)
 
   #Make sure the trait data is sorted correctly
