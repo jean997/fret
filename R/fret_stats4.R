@@ -250,7 +250,7 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
                          pheno_transformation, "all")
       s0_chunks <- chunk_df %>% filter(File==s0_est_size) %>% with(., first_chunk:last_chunk)
     }else{
-      if(calss(s0_est_size)=="numeric"){
+      if(class(s0_est_size)=="numeric"){
         start_chunk_s0 <- sample(seq(total_chunks-nc + 1), size=1)
         end_chunk_s0 <- start_chunk_s0 + nc -1
       }else{
