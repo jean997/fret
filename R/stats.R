@@ -1,4 +1,4 @@
-
+#Calculate stats for one trait
 stats1 <- function(Y, x, s0 = 0,  cores, stat_fun, libs = c()){
   if(cores==1){
     B <- data.frame(t(
@@ -22,6 +22,7 @@ stats1 <- function(Y, x, s0 = 0,  cores, stat_fun, libs = c()){
   return(B)
 }
 
+#Calculate stats for many traits (used for permutations)
 stats_many <- function(Y, X, s0=0, cores, stat_fun, libs=c()){
   if(cores==1){
     B <- t(apply(Y, MARGIN=1, FUN=function(y){
