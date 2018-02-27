@@ -6,11 +6,11 @@
 \usage{
 fret_stats(pheno_file_list, trait_file, mode = c("dry_run", "s0_only",
   "full"), s0, zmin, z0 = if (!missing(zmin)) 0.3 * zmin,
-  s0_est_size = pheno_file_list[1], seed, n_perm = 0,
-  pheno_transformation = NULL, trait = c("x"), covariates = c(),
-  stat_type = c("huber", "lm", "qp", "custom"), stat_fun = NULL,
-  libs = c(), bandwidth = 151, smoother = c("ksmooth_0", "ksmooth"),
-  chunksize = 1e+05, which_chunks = "all", temp_dir = "./",
+  s0_est_size = pheno_file_list[1], pheno_transformation = NULL,
+  trait = "x", covariates = c(), sample = "name", stat_type = c("huber",
+  "lm", "qp", "custom"), stat_fun = NULL, resid_fun = NULL, libs = c(),
+  seed, n_perm = 0, bandwidth = 151, smoother = c("ksmooth_0", "ksmooth",
+  "none"), chunksize = 1e+05, which_chunks = "all", temp_dir = "./",
   temp_prefix = NULL, labels = pheno_file_list, cores = 1)
 }
 \arguments{
@@ -29,12 +29,7 @@ sample of test statistics (See details below).}
 \item{z0}{Merging threshold. If missing z0 = 0.3*zmin.}
 
 \item{s0_est_size}{Number of test statistics used to estimate s0. Alternatively, s0_est_size may be a character
-string giving a phenotype file name. In this case, all test statistics from that file will be used.}
-
-\item{seed}{Seed (used for permutations). If missing, a random seed will be chosen and stored.}
-
-\item{n_perm}{Number of permutations.
-If n.perm=0, only test statistics for unpermuted data will be calculated.}
+string giving a phenotype file name or may be "all" to use all files.}
 
 \item{pheno_transformation}{If the phenotype is to be transformed, provide a function taking one argument (the vector of phenotype)
 and outputting the transformed phenotype.}
@@ -44,6 +39,11 @@ and outputting the transformed phenotype.}
 \item{covariates}{List of covariates to adjust for (names should match header of trait_file)}
 
 \item{stat_type}{Type of test statistis. May be one of "huber" or "lm".}
+
+\item{seed}{Seed (used for permutations). If missing, a random seed will be chosen and stored.}
+
+\item{n_perm}{Number of permutations.
+If n.perm=0, only test statistics for unpermuted data will be calculated.}
 
 \item{bandwidth}{Smoothing bandwidth}
 

@@ -58,11 +58,12 @@
 #'@export
 fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only", "full"),
                        s0, zmin, z0 = if(!missing(zmin)) 0.3*zmin,
-                       s0_est_size = pheno_file_list[1], seed, n_perm=0,
+                       s0_est_size = pheno_file_list[1],
                        pheno_transformation=NULL, trait="x", covariates=c(), sample="name",
                        stat_type=c("huber", "lm", "qp", "custom"),
                        stat_fun=NULL, resid_fun=NULL, libs=c(),
-                       bandwidth=151, smoother=c("ksmooth_0", "ksmooth"),
+                       seed, n_perm=0,
+                       bandwidth=151, smoother=c("ksmooth_0", "ksmooth", "none"),
                        chunksize=1e5, which_chunks="all",
                        temp_dir ="./",  temp_prefix=NULL, labels=pheno_file_list,
                        cores=1){
@@ -92,8 +93,6 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   }
   #stat type
   if(stat_type == "custom" & is.null(stat_fun)) stop("For custom stat_type, please provide stat_fun and libs.\n")
-
-
   #smoother
   stopifnot(floor(bandwidth)==bandwidth & bandwidth > 0)
   smoother <- match.arg(smoother)
@@ -105,10 +104,15 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     smooth_func <- function(x, y, xout, bandwidth){
       ksmooth(x=x, y=y, x.points=xout, bandwidth=bandwidth)$y
     }
+  }else if(smoother=="none"){
+    smooth_func <- function(x, y, xout, bandwidth){
+      stopifnot(all(xout == x))
+      return(y)
+    }
   }
+  margin <- 2*bandwidth
 
-  margin <- 5*bandwidth
-
+  if(n_perm > 0 & missing(seed)) stop("If n_perm > 0, a seed must be provided.\n")
   if(is.null(temp_prefix)) temp_prefix <- paste0(sample(c(letters, LETTERS), size=4), collapse="")
   if(str_sub(temp_dir, -1) != "/") temp_dir <- paste0(temp_dir, "/")
   cat("temp files will be saved to: ", paste0(temp_dir, temp_prefix, "-label.chunknum.RDS\n"))
@@ -122,26 +126,17 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   ##  Read trait data ##
   ######################
 
-  #stat type
-  if(stat_type=="huber"){
-    resid_fun <- huber_resids
-  }else if(stat_type=="lm"){
-    resid_fun <- lm_resids
-  }else if(stat_type=="qp"){
-    resid_fun <- qp_resids
-  }
-
-
-
   dm <- detect_dm_csv(filename=trait_file, header=TRUE, sep=" ")
   df_laf <- laf_open(dm)
   X <- df_laf[,]
   close(df_laf)
+
   if(!trait %in% names(X)) stop(paste0("ERROR: I didn't find colunns matching ", trait, " in ", trait_file, ".\n"))
   if(!sample %in% names(X)) stop(paste0("ERROR: I didn't find colunns matching ", sample, " in ", trait_file, ".\n"))
   if(!all(covariates %in% names(X))) stop(paste0("ERROR: I didn't find colunns matching all of ", paste0(covariates, collapse=","), " in ", trait_file, ".\n"))
   cat("Trait name: ", trait, "\n")
   cat("Sample name collumn: ", sample, "\n")
+
   #Adjust trait for covariates
   if(length(covariates) > 0){
     cat("Adjusting ", trait, " for ", covariates, "\n")
@@ -149,7 +144,6 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   }
   n <- nrow(X)
   if(n_perm > 0){
-    if(missing(seed)) stop("If n_perm > 0, a seed must be provided.\n")
     set.seed(seed)
     perms <- replicate(n=n_perm, expr = {
       sample(1:n, size=n, replace=FALSE)
@@ -157,23 +151,23 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   }else{
     perms <- NULL
   }
-
-
   #stat type
   if(stat_type=="huber"){
     stat_fun <- huber_stat
+    resid_fun <- huber_resids
     libs <- c("MASS")
   }else if(stat_type=="lm"){
     stat_fun <- lm_stat
+    resid_fun <- lm_resids
   }else if(stat_type=="qp"){
     if(all(X[[trait]] %in% c(0, 1))){
       stat_fun <- qp_stat_binary
     }else{
       stat_fun <- qp_stat_continuous
+      resid_fun <- qp_resids
       libs <- c("stats")
     }
   }
-
 
   #########################################
   ## Determine number of chunks per file ##
@@ -189,7 +183,9 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   chunk_df$first_chunk <- with(chunk_df, last_chunk-nchunks + 1)
   cat("Chunks per file: \n")
   print(chunk_df)
+
   total_chunks <- with(chunk_df, sum(nchunks))
+
   if(class(which_chunks)=="numeric" | class(which_chunks)=="integer"){
     if(any(which_chunks > total_chunks | which_chunks < 1)) stop("ERROR: Some requested chunks are not in 1:", total_chunks, "\n")
     which_files <- with(chunk_df, which( first_chunk <=  max(which_chunks) & last_chunk >= min(which_chunks)))
@@ -246,8 +242,8 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     cat("Estimating s0 and/or zmin.\n")
     if(class(s0_est_size)=="character" & !s0_est_size=="all"){
       stats_s0 <- get_stats(s0_est_size, nc, chunksize, margin,
-                         X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
-                         pheno_transformation, "all")
+                         X, trait, covariates, sample, pheno_transformation,
+                         cores, libs, s0, stat_fun, resid_fun, "all")
       s0_chunks <- chunk_df %>% filter(File==s0_est_size) %>% with(., first_chunk:last_chunk)
     }else{
       if(class(s0_est_size)=="numeric"){
@@ -261,8 +257,8 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
       s0_file_ix <- with(chunk_df, which( first_chunk <=  end_chunk_s0 & last_chunk >= start_chunk_s0))
       stats_s0 <- lapply(s0_file_ix, function(i){
         with(chunk_df, get_stats(File[i], nchunks[i], chunksize, margin,
-                  X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
-                  pheno_transformation,
+                  X, trait, covariates, sample, pheno_transformation,
+                  cores, libs,s0, stat_fun, resid_fun,
                   chunks=which(first_chunk[i]:last_chunk[i] %in% s0_chunks)))
       })
       stats_s0 <- do.call(rbind, stats_s0)
@@ -304,8 +300,8 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
     # Calculate (non-permutation) test statistics #
     ###############################################
     R_temp$stats <- with(chunk_df, get_stats(File[file_ix], nchunks[file_ix], chunksize, margin,
-                             X, trait, covariates, sample, s0, stat_fun, resid_fun, cores, libs,
-                             pheno_transformation,
+                             X, trait, covariates, sample, pheno_transformation,
+                             cores, libs, s0, stat_fun, resid_fun,
                              chunks=chunk_in_file))
     ######################################
     # Smooth (non-permutation) statistics#

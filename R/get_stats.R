@@ -15,9 +15,9 @@
 #'@param chunks Which chunks; may only be "all" or contiguous integers
 #'@export
 get_stats <- function(file_name, nchunks, chunksize, margin,
-                       X, trait, covariates, sample, s0, stat_fun, resid_fun,
+                       X, trait, covariates, sample,pheno_transformation=NULL,
                       cores, libs,
-                      pheno_transformation=NULL, chunks="all"){
+                      s0, stat_fun, resid_fun, chunks="all"){
   #Check chunk argument
   if(class(chunks) == "numeric" | class(chunks)=="integer"){
     stopifnot(all(chunks %in% 1:nchunks))
