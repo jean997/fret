@@ -7,8 +7,8 @@ stats1 <- function(Y, x, s0 = 0,  cores, stat_fun, libs = c()){
     }))) %>% dplyr::rename("beta" ="X1", "se" = "X2", "stat" = "X3")
     return(B)
   }
-  cl <- makeCluster(cores, type="FORK")
-  #clusterExport(cl, varlist = c("Y", "x", "s0", "stat_fun"))
+  cl <- makeCluster(cores, type="PSOCK")
+  clusterExport(cl, varlist = c("Y", "x", "s0", "stat_fun"))
   if(length(libs) > 0){
     txt <- paste0("library(", libs, ")")
     clusterCall(cl, fun=function(txt){sapply(txt, function(x){eval(parse(text=x))})},
@@ -32,8 +32,8 @@ stats_many <- function(Y, X, s0=0, cores, stat_fun, libs=c()){
     }))
     return(B)
   }
-  cl <- makeCluster(cores, type="FORK")
-  #clusterExport(cl, varlist= c("Y", "X", "s0", "stat_fun"))
+  cl <- makeCluster(cores, type="PSOCK")
+  clusterExport(cl, varlist= c("Y", "X", "s0", "stat_fun"))
   if(length(libs) > 0){
     txt <- paste0("library(", libs, ")")
     clusterCall(cl, fun=function(txt){sapply(txt, function(x){eval(parse(text=x))})},
