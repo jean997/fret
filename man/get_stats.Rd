@@ -27,6 +27,8 @@ get_stats(file_name, nchunks, chunksize, margin, X, trait, covariates, sample,
 
 \item{pheno_transformation}{Phenotype transformation}
 
+\item{cores}{Number of cores}
+
 \item{s0}{s0}
 
 \item{stat_fun}{Function to calculate test stats}

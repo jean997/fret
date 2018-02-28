@@ -10,7 +10,7 @@
 #'@param s0 s0
 #'@param stat_fun Function to calculate test stats
 #'@param resid_fun Function to calculate residual
-#'@param cores
+#'@param cores Number of cores
 #'@param pheno_transformation Phenotype transformation
 #'@param chunks Which chunks; may only be "all" or contiguous integers
 #'@export
