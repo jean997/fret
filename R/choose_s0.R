@@ -14,15 +14,15 @@ choose_s0 <- function(beta, se){
 
   salpha <- as.numeric(quantile(se, probs=seq(0.01, 0.99, by=0.01)))
   nn <- length(salpha)
-  ix <- sapply(se, FUN=function(w){ sum(w >= c(0, salpha))})
+  ix <- sapply(se, FUN=function(w){ sum(w > c(0, salpha))})
 
   fct <- function(s0, beta, se, ix){
     #cat(s0, " ")
     xx <- beta/(se + s0)
     v <- as.numeric(by(data=xx, INDICES = ix, FUN = mad, constant = 1/0.64))
-    cv <- sd(v)/mean(v)
-    #cat(cv, "\n")
-    return(cv)
+    #cv <- sd(v)/mean(v)
+    #m <- max(abs(v-median(v))/mad(v, constant=1))
+    return(v)
   }
 
   zz <- sapply(salpha, FUN=fct, beta=beta, se=se, ix=ix)
