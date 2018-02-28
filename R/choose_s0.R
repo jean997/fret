@@ -21,8 +21,8 @@ choose_s0 <- function(beta, se){
     xx <- beta/(se + s0)
     v <- as.numeric(by(data=xx, INDICES = ix, FUN = mad, constant = 1/0.64))
     #cv <- sd(v)/mean(v)
-    #m <- max(abs(v-median(v))/mad(v, constant=1))
-    return(v)
+    m <- max(abs(v-median(v))/mad(v, constant=1))
+    return(m)
   }
 
   zz <- sapply(salpha, FUN=fct, beta=beta, se=se, ix=ix)
