@@ -28,38 +28,3 @@ choose_s0 <- function(beta, se){
   zz <- sapply(salpha, FUN=fct, beta=beta, se=se, ix=ix)
   return(salpha[which.min(zz)])
 }
-
-#'@export
-choose_zmin <- function(beta, se, s0, pos, bandwidth,
-                        smoother=c("ksmooth_0", "ksmooth"), zmin_quantile=0.9,
-                        stitch=1e5, parallel=TRUE){
-  stopifnot(length(quantile) %in% c(1, 2))
-  smoother <- match.arg(smoother)
-  if(smoother=="ksmoooth_0"){
-    smooth.func <- function(x, y, bandwidth){
-      ksmooth_0(x, y, bandwidth, stitch=stitch, parallel=parallel)
-    }
-  }else{
-    smooth.func <- function(x, y, bandwidth){
-      ksmooth(x=x, y=y, x.points=x, bandwidth=bandwidth)$y
-    }
-  }
-
-  if(any(is.na(se))){
-    nmiss <- sum(is.na(se))
-    cat("Warning: ", nmiss, " positions have missing sd -- will be treated as zero if s0 > 0.\n")
-    ix <- which(is.na(se))
-    if(s0 > 0){
-      se[ix] <- 0
-    }else{
-      beta <- beta[-ix]
-      se <- se[-ix]
-      pos <- pos[-ix]
-    }
-  }
-
-  y <- beta/(se + s0)
-  ys <-smooth.func(pos, y, bandwidth)
-  if(length(zmin_quantile)==1) return(quantile(abs(ys), zmin_quantile))
-  return(quantile(ys, zmin_quantile))
-}
