@@ -31,7 +31,7 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
     keep_start <- chunk_start[i] -read_start + 1
     keep_stop <- chunk_stop[i] - read_start + 1
     pos <- dat$pos
-    if(!is.null(out_by)) pos_new <- seq(min(dat.save$pos), max(dat.save$pos), by=out_by)
+    if(!is.null(out_by)) pos_new <- seq(min(pos), max(pos), by=out_by)
       else pos_new <- pos
     dat_sm <- apply(dat[,-1], 2, function(y){smooth_func(pos, y, pos_new, bandwidth)})
     nzero <- apply(dat_sm, 1, function(x){sum(x==0)})
