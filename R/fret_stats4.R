@@ -174,7 +174,6 @@ fret_stats <- function(pheno_file_list, trait_file, mode = c("dry_run", "s0_only
   #########################################
   chunk_df <- data.frame("File" = pheno_file_list, "label" = labels, "nchunks"=NA,
                          "first_chunk" = NA, "last_chunk" = NA, stringsAsFactors = FALSE)
-  chunk_df$first_chunk[1] <- ct <- 1
   for(i in 1:length(pheno_file_list)){
     nl <- determine_nlines(pheno_file_list[i])-1
     chunk_df$nchunks[i] <- max(1, ceiling(nl/chunksize))
