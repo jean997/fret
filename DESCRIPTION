@@ -13,6 +13,4 @@ URL: http://github.com/jean997/fret
 BugReports: http://github.com/jean997/fret/issues
 Suggests:knitr
 VignetteBuilder: knitr
-LinkingTo: Rcpp, RcppParallel
-Imports:  Rcpp (>= 0.12.9.2), RcppParallel (>= 4.3.20)
 RoxygenNote: 6.0.1
