@@ -23,7 +23,8 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
   nl <- determine_nlines(file_name)-1
   nchunks <- ceiling(nl/chunksize)
   chunk_start <- (seq(nchunks) -1)*chunksize + 1
-  chunk_stop <- c(chunk_start[-1] -1,  nl)
+  if(nchunks == 1) chunk_stop <- nl
+  	else chunk_stop <- c(chunk_start[-1] -1,  nl)
   options(scipen=Inf)
   for(i in 1:nchunks){
     goto(df_laf, max(1, (i-1)*chunksize-bandwidth + 1))
@@ -39,5 +40,6 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
     dat_sm <- cbind(pos_new, dat_sm)  %>% as.data.frame() %>% filter(nzero <= maxzero)
     write.table(dat_sm, file=out_file_name, sep=" ", row.names=FALSE, quote=FALSE, col.names=(i==1), append = (i > 1))
   }
+  close(df_laf)
 
 }
