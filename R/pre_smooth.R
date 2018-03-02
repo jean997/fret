@@ -24,6 +24,7 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
   nchunks <- ceiling(nl/chunksize)
   chunk_start <- (seq(nchunks) -1)*chunksize + 1
   chunk_stop <- c(chunk_start[-1] -1,  nl)
+  options(scipen=Inf)
   for(i in 1:nchunks){
     goto(df_laf, max(1, (i-1)*chunksize-bandwidth + 1))
     dat <- next_block(df_laf, nrows=chunksize + 2*bandwidth)
