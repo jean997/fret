@@ -30,15 +30,28 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
     goto(df_laf, max(1, (i-1)*chunksize-bandwidth + 1))
     dat <- next_block(df_laf, nrows=chunksize + 2*bandwidth)
     read_start <- max(1, (i-1)*chunksize-bandwidth + 1)
-    keep_start <- chunk_start[i] -read_start + 1
-    keep_stop <- chunk_stop[i] - read_start + 1
+
     pos <- dat$pos
-    if(!is.null(out_by)) pos_new <- seq(min(pos), max(pos), by=out_by)
-      else pos_new <- pos
+    if(i==1) first_pos <- pos[1]
+    keep_start <- first_pos
+    if(i > 1) keep_start <- first_pos + 1
+    keep_stop <- pos[chunk_stop[i] - read_start + 1]
+    if(!is.null(out_by)){
+      pos_new <- seq(first_pos, max(pos), by=out_by)
+      pos_new <- pos_new[pos_new >=min(pos) & pos_new <= max(pos)]
+    }else{
+      pos_new <- pos
+    }
     dat_sm <- apply(dat[,-1], 2, function(y){smooth_func(pos, y, pos_new, bandwidth)})
-    nzero <- apply(dat_sm, 1, function(x){sum(x==0)})
-    dat_sm <- cbind(pos_new, dat_sm)  %>% as.data.frame() %>% filter(nzero <= maxzero)
+
+    dat_sm <- cbind(pos_new, dat_sm)  %>% as.data.frame() %>%
+      rename("pos" = "pos_new") %>%
+      filter(pos >= keep_start & pos <= keep_stop)
+    first_pos <- dat_sm$pos[nrow(dat_sm)]
+    nzero <- select(dat_sm, -pos) %>% apply(., 1, function(x){sum(x==0)})
+    dat_sm <- dat_sm %>% filter(nzero <= maxzero)
     write.table(dat_sm, file=out_file_name, sep=" ", row.names=FALSE, quote=FALSE, col.names=(i==1), append = (i > 1))
+    #if(17473921 %in% pos_new) break
   }
   close(df_laf)
 
