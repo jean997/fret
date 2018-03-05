@@ -1,7 +1,9 @@
 
 #'@export
 pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
-                       smoother=c("ksmooth_0", "ksmooth"), chunksize=1e5, out_by = floor(bandwidth/2)){
+                       windows_bed_file=NULL, chr=NULL,
+                       smoother=c("ksmooth_0", "ksmooth"), chunksize=1e5,
+                       out_by = floor(bandwidth/2)){
 
   smoother <- match.arg(smoother)
   if(smoother=="ksmooth_0"){
@@ -13,7 +15,13 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
       ksmooth(x=x, y=y, x.points=xout, bandwidth=bandwidth)$y
     }
   }
-
+  if(!is.null(windows_bed_file)){
+    if(is.null(chr)) stop("If you provide a bed file, please also provide the chromosome.\n")
+    if(is.null(out_by)) stop("If you provide a bed file, please also provide out_by.\n")
+    windows <- read_tsv(windows_bed_file, col_names=c("chrom", "start", "stop")) %>%
+                filter(chrom==chr)
+    new_pos_full <- apply(windows, 1, function(x){seq(x[2]:x[3], by=out_by)}) %>% unlist()
+  }
   #Open pheno file
   dm <- detect_dm_csv(filename=file_name, header=TRUE, sep=" ")
   dm$columns$type <- rep(c("integer", "double"), c(1, nrow(dm$columns)-1))
@@ -36,7 +44,9 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
     keep_start <- first_pos
     if(i > 1) keep_start <- first_pos + 1
     keep_stop <- pos[chunk_stop[i] - read_start + 1]
-    if(!is.null(out_by)){
+    if(!is.null(windows_bed_file)){
+      pos_new <- new_pos_full[ new_pos_full >= keep_start & new_pos_full <= keep_stop]
+    }else if(!is.null(out_by)){
       pos_new <- seq(first_pos, max(pos), by=out_by)
       pos_new <- pos_new[pos_new >=min(pos) & pos_new <= max(pos)]
     }else{
