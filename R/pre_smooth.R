@@ -20,7 +20,7 @@ pre_smooth <- function(file_name, bandwidth, out_file_name, maxzero,
     if(is.null(out_by)) stop("If you provide a bed file, please also provide out_by.\n")
     windows <- read_tsv(windows_bed_file, col_names=c("chrom", "start", "stop")) %>%
                 filter(chrom==chr)
-    new_pos_full <- apply(windows, 1, function(x){seq(x[2]:x[3], by=out_by)}) %>% unlist()
+    new_pos_full <- apply(windows, 1, function(x){seq(x[2], x[3], by=out_by)}) %>% unlist()
   }
   #Open pheno file
   dm <- detect_dm_csv(filename=file_name, header=TRUE, sep=" ")
